@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RueyVideoEditor — open-source desktop video editor</title>
+  <meta name="description" content="RueyVideoEditor is a free, open-source desktop video editor. Clone it, build it, run it.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand"><span class="mark">R</span> RueyVideoEditor</div>
+      <h1>A video editor you build yourself.</h1>
+      <p class="lede">RueyVideoEditor is a free, open-source desktop video editor: multi-track timeline, transitions, keyframes, titles, effects and fast native FFmpeg export. There is no installer to trust. You clone the code, read it if you like, compile it, and run it.</p>
+      <div class="cta">
+        <a class="btn primary" href="#build">Build &amp; run</a>
+        <a class="btn" href="https://github.com/rueyday/RueyVideoEditor" id="repo-link">Star on GitHub ★</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="build">
+      <h2>Build &amp; run in three steps</h2>
+      <p>Requires <a href="https://rustup.rs">Rust</a> and the <a href="https://tauri.app/start/prerequisites/">Tauri prerequisites</a> for your platform (Xcode command-line tools on macOS, WebView2 + Visual Studio build tools on Windows, webkit2gtk on Linux). FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-os="mac">macOS</button>
+        <button class="tab" data-os="win">Windows</button>
+        <button class="tab" data-os="linux">Linux</button>
+      </div>
+
+      <div class="os-pane" data-os="mac">
+        <pre><code><span class="c"># 1. Rust + Tauri CLI</span>
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+xcode-select --install
+cargo install tauri-cli --version "^2"
+
+<span class="c"># 2. Clone</span>
+git clone https://github.com/rueyday/RueyVideoEditor.git rve
+cd RueyVideoEditor
+
+<span class="c"># 3. Run (development build) …</span>
+cargo tauri dev
+
+<span class="c"># … or build an app bundle (src-tauri/target/release/bundle/)</span>
+cargo tauri build</code></pre>
+      </div>
+      <div class="os-pane" data-os="win" hidden>
+        <pre><code><span class="c"># 1. Rust + Tauri CLI (PowerShell). Also install "Desktop development with C++"</span>
+<span class="c">#    from the Visual Studio Build Tools, and the WebView2 runtime if missing.</span>
+winget install Rustlang.Rustup
+cargo install tauri-cli --version "^2"
+
+<span class="c"># 2. Clone</span>
+git clone https://github.com/rueyday/RueyVideoEditor.git rve
+cd RueyVideoEditor
+
+<span class="c"># 3. Run (development build) …</span>
+cargo tauri dev
+
+<span class="c"># … or build an installer (src-tauri\target\release\bundle\)</span>
+cargo tauri build</code></pre>
+      </div>
+      <div class="os-pane" data-os="linux" hidden>
+        <pre><code><span class="c"># 1. Rust + Tauri CLI + system libraries (Debian / Ubuntu shown)</span>
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev ffmpeg
+cargo install tauri-cli --version "^2"
+
+<span class="c"># 2. Clone</span>
+git clone https://github.com/rueyday/RueyVideoEditor.git rve
+cd RueyVideoEditor
+
+<span class="c"># 3. Run (development build) …</span>
+cargo tauri dev
+
+<span class="c"># … or build an AppImage / .deb (src-tauri/target/release/bundle/)</span>
+cargo tauri build</code></pre>
+      </div>
+      <p class="note">First build takes a few minutes while Rust compiles the dependencies. After that, changes to the UI (<code>ui/</code>) show up on reload and changes to the engine (<code>src-tauri/</code>) rebuild in seconds.</p>
+    </section>
+
+    <section>
+      <h2>What it does</h2>
+      <div class="grid">
+        <div class="card"><h3>Timeline</h3><p>Unlimited video and audio tracks, drag to move and trim, razor, ripple delete, snapping, markers, in/out points, zoom, undo/redo.</p></div>
+        <div class="card"><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity and crop, all keyframable with linear or eased interpolation. Move and resize directly on the preview.</p></div>
+        <div class="card"><h3>Transitions</h3><p>Cross dissolve, fade to black/white, wipes, slides, circles, zoom, pixelize and more, powered by FFmpeg's xfade.</p></div>
+        <div class="card"><h3>Titles &amp; colour</h3><p>Text clips with font size, weight, alignment, background box and shadow. Solid colour clips for backgrounds.</p></div>
+        <div class="card"><h3>Effects</h3><p>Colour correction, blur, sharpen, flip, black &amp; white, sepia, invert, vignette, chroma key, LUTs, film grain.</p></div>
+        <div class="card"><h3>Audio</h3><p>Volume, fades, mute/solo per track, speed with pitch correction, detach audio from video.</p></div>
+        <div class="card"><h3>Any format in</h3><p>Anything FFmpeg reads: MP4, MOV, MKV, AVI, WebM, ProRes, images, MP3, WAV… Proxies keep 4K editing smooth.</p></div>
+        <div class="card"><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only. Hardware encoders (VideoToolbox, NVENC, Quick Sync, AMF) when available.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Why "build it yourself"?</h2>
+      <p>Downloading an unsigned binary from a stranger is a leap of faith. RueyVideoEditor doesn't ask for it. The whole editor is about ten thousand lines of readable Rust and JavaScript, with no bundler, no framework and no telemetry. Clone it, skim <code>src-tauri/src/export.rs</code> to see exactly what runs on your files, then compile it with the same toolchain everyone else uses. Want a feature? Add it and rebuild.</p>
+    </section>
+
+    <section>
+      <h2>Hacking on it</h2>
+      <ul class="plain">
+        <li><code>ui/</code> — the interface: plain HTML, CSS and ES modules. Open <code>ui/index.html</code> in a browser to work on it without compiling anything.</li>
+        <li><code>src-tauri/src/export.rs</code> — turns a project into one FFmpeg filter graph. Adding an effect is one match arm here and one entry in <code>ui/js/model.js</code>.</li>
+        <li><code>src-tauri/src/commands.rs</code> — the API between the UI and the engine.</li>
+        <li>The <a href="https://github.com/rueyday/RueyVideoEditor#readme">README</a> explains the architecture in detail.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>MIT licensed. Uses <a href="https://ffmpeg.org">FFmpeg</a> (LGPL/GPL), <a href="https://tauri.app">Tauri</a> and the <a href="https://rsms.me/inter/">Inter</a> font.</p>
+  </footer>
+
+  <script>
+    for (const tab of document.querySelectorAll('.tab')) {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.os-pane').forEach(p => { p.hidden = p.dataset.os !== tab.dataset.os; });
+      });
+    }
+    const ua = navigator.userAgent;
+    const os = /Windows/.test(ua) ? 'win' : /Linux/.test(ua) && !/Android/.test(ua) ? 'linux' : 'mac';
+    document.querySelector(`.tab[data-os="${os}"]`)?.click();
+  </script>
+</body>
+</html>

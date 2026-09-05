@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "RueyVideoEditor",
+  "version": "0.1.0",
+  "identifier": "dev.rueyday.videoeditor",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "RueyVideoEditor",
+        "width": 1480,
+        "height": 920,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Video",
+    "shortDescription": "Open-source desktop video editor",
+    "longDescription": "RueyVideoEditor is a free, open-source video editor. Multi-track timeline, transitions, keyframes, titles, effects and fast native FFmpeg export.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

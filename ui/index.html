@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RueyVideoEditor</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header id="topbar" class="topbar">
+      <div class="brand"><span class="brand-mark">R</span><span class="brand-name">RueyVideoEditor</span></div>
+      <nav class="topbar-nav" id="topbar-nav"></nav>
+      <div class="topbar-right" id="topbar-right"></div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <aside id="media-panel" class="panel media-panel"></aside>
+      <section id="preview-panel" class="preview-panel"></section>
+      <aside id="inspector-panel" class="panel inspector-panel"></aside>
+    </main>
+
+    <div id="splitter" class="splitter" title="Drag to resize the timeline"></div>
+
+    <section id="timeline-panel" class="timeline-panel"></section>
+  </div>
+
+  <div id="overlay-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+  <div id="drop-hint" class="drop-hint" hidden><div>Drop media files to import</div></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
