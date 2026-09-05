@@ -5,6 +5,8 @@ A free, open-source desktop video editor. Compiled Rust engine driving native FF
 - **Website (build & run instructions):** the `docs/` folder, served by GitHub Pages
 - **Licence:** MIT (FFmpeg itself is LGPL/GPL and runs as a separate program)
 
+![RueyMediaEditor with a side-by-side comparison, labels, captions and a multi-track timeline](docs/screenshot.png)
+
 ---
 
 ## Contents

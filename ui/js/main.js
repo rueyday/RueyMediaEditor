@@ -121,15 +121,44 @@ function updateFfmpegPill() {
 }
 
 function initSplitter() {
-  const splitter = $('#splitter');
-  splitter.addEventListener('pointerdown', e => {
-    splitter.setPointerCapture(e.pointerId);
-    const startY = e.clientY;
-    const start = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--timeline-h'));
-    const move = ev => { const hgt = Math.max(160, Math.min(window.innerHeight - 300, start - (ev.clientY - startY))); document.documentElement.style.setProperty('--timeline-h', `${hgt}px`); };
-    const up = () => { splitter.removeEventListener('pointermove', move); splitter.removeEventListener('pointerup', up); };
-    splitter.addEventListener('pointermove', move);
-    splitter.addEventListener('pointerup', up);
+  const rootStyle = document.documentElement.style;
+  const cssVar = name => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('rve.layout') || '{}'); } catch { return {}; } })();
+  for (const [k, v] of Object.entries(saved)) if (typeof v === 'number') rootStyle.setProperty(k, `${v}px`);
+  const persist = () => { try { localStorage.setItem('rve.layout', JSON.stringify({ '--timeline-h': cssVar('--timeline-h'), '--media-w': cssVar('--media-w'), '--inspector-w': cssVar('--inspector-w') })); } catch {} };
+  // Generic drag: element, css variable, axis, direction (+1 grows with pointer, -1 shrinks), bounds.
+  const attach = (el, varName, axis, dir, min, max) => {
+    if (!el) return;
+    el.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('active');
+      const start = axis === 'x' ? e.clientX : e.clientY;
+      const base = cssVar(varName);
+      const move = ev => {
+        const cur = axis === 'x' ? ev.clientX : ev.clientY;
+        const v = Math.max(min(), Math.min(max(), base + dir * (cur - start)));
+        rootStyle.setProperty(varName, `${Math.round(v)}px`);
+      };
+      const up = () => { el.classList.remove('active'); el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); persist(); window.dispatchEvent(new Event('resize')); };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    });
+    el.addEventListener('dblclick', () => { rootStyle.removeProperty(varName); persist(); window.dispatchEvent(new Event('resize')); });
+  };
+  attach($('#splitter'), '--timeline-h', 'y', -1, () => 140, () => window.innerHeight - 260);
+  attach($('#vsplit-left'), '--media-w', 'x', 1, () => 180, () => window.innerWidth - cssVar('--inspector-w') - 320);
+  attach($('#vsplit-right'), '--inspector-w', 'x', -1, () => 220, () => window.innerWidth - cssVar('--media-w') - 320);
+  window.addEventListener('resize', () => {
+    // keep panels inside the window after the window shrinks
+    const w = window.innerWidth;
+    if (cssVar('--media-w') + cssVar('--inspector-w') + 320 > w) {
+      rootStyle.setProperty('--media-w', `${Math.max(180, Math.min(cssVar('--media-w'), w * 0.25))}px`);
+      rootStyle.setProperty('--inspector-w', `${Math.max(220, Math.min(cssVar('--inspector-w'), w * 0.28))}px`);
+    }
+    if (cssVar('--timeline-h') > window.innerHeight - 260) rootStyle.setProperty('--timeline-h', `${Math.max(140, window.innerHeight - 260)}px`);
   });
 }
 

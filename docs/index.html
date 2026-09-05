@@ -3,132 +3,182 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RueyMediaEditor — open-source desktop video editor</title>
-  <meta name="description" content="RueyMediaEditor is a free, open-source desktop video editor. Clone it, build it, run it.">
+  <title>RueyMediaEditor — open-source video editor for research videos</title>
+  <meta name="description" content="RueyMediaEditor is a free, open-source desktop video editor with a Rust + FFmpeg engine. Side-by-side comparisons, captions, keyframes, fast native export. Clone it, build it, run it.">
+  <meta property="og:title" content="RueyMediaEditor">
+  <meta property="og:description" content="Free, open-source desktop video editor built for research videos. Clone it, build it, run it.">
+  <meta property="og:image" content="screenshot.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232f6fe0'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-weight='800' font-size='18' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-  <header class="hero">
+  <header class="nav">
     <div class="wrap">
-      <div class="brand"><span class="mark">R</span> RueyMediaEditor</div>
-      <h1>A video editor you build yourself.</h1>
-      <p class="lede">RueyMediaEditor is a free, open-source desktop video editor: multi-track timeline, transitions, keyframes, titles, effects and fast native FFmpeg export. There is no installer to trust. You clone the code, read it if you like, compile it, and run it.</p>
-      <div class="cta">
-        <a class="btn primary" href="#build">Build &amp; run</a>
-        <a class="btn" href="https://github.com/rueyday/RueyMediaEditor" id="repo-link">Star on GitHub ★</a>
-      </div>
+      <a class="brand" href="#"><span class="mark">R</span> RueyMediaEditor</a>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#research">For research</a>
+        <a href="#build">Build &amp; run</a>
+        <a class="star" href="https://github.com/rueyday/RueyMediaEditor">★ Star on GitHub</a>
+      </nav>
     </div>
   </header>
 
-  <main class="wrap">
-    <section id="build">
-      <h2>Build &amp; run in three steps</h2>
-      <p>Requires <a href="https://rustup.rs">Rust</a> and the <a href="https://tauri.app/start/prerequisites/">Tauri prerequisites</a> for your platform (Xcode command-line tools on macOS, WebView2 + Visual Studio build tools on Windows, webkit2gtk on Linux). FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
-
-      <div class="tabs" role="tablist">
-        <button class="tab active" data-os="mac">macOS</button>
-        <button class="tab" data-os="win">Windows</button>
-        <button class="tab" data-os="linux">Linux</button>
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow"><span class="dot"></span> Open source · Offline · No account · No watermark</span>
+      <h1>The video editor you <span>compile yourself.</span></h1>
+      <p class="lede">A free desktop editor with a Rust + FFmpeg engine, built for research videos: multi-track timeline, side-by-side comparisons, captions, keyframes and fast native export. No installer to trust. Clone it, build it, run it.</p>
+      <div class="cta">
+        <a class="btn dark" href="#build">Build &amp; run in 3 steps →</a>
+        <a class="btn light" href="https://github.com/rueyday/RueyMediaEditor">View the source</a>
+      </div>
+      <div class="facts">
+        <span><b>MIT</b> licensed</span>
+        <span><b>~10k lines</b> of readable Rust + JavaScript</span>
+        <span><b>0</b> uploads, accounts or telemetry</span>
+        <span><b>1</b> command to build</span>
       </div>
 
-      <div class="os-pane" data-os="mac">
-        <pre><code><span class="c"># 1. Rust + Tauri CLI</span>
+      <div class="shot">
+        <div class="window">
+          <div class="bar"><i></i><i></i><i></i><span>ICRA supplementary v3 — RueyMediaEditor</span></div>
+          <img src="screenshot.png" alt="RueyMediaEditor with a side-by-side comparison of two experiment videos, labels, captions and a multi-track timeline" width="1440" height="900">
+        </div>
+        <p class="caption">Baseline vs. ours, labelled and captioned, in a couple of clicks.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="kicker">Everything you expect</div>
+      <h2>A real editor, not a toy.</h2>
+      <p class="sub">The core of a non-linear editor, done properly, with the FFmpeg engine doing the heavy lifting at native speed.</p>
+      <div class="grid">
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h10"/></svg></div><h3>Multi-track timeline</h3><p>Unlimited video and audio tracks. Drag, trim, razor, ripple delete, snapping, markers, in/out points, undo history.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity, crop and volume, all keyframable. Drag, resize and rotate right on the preview.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20L20 4M4 4l16 16"/></svg></div><h3>Transitions</h3><p>Cross dissolve, fades, wipes, slides, circles and more via FFmpeg's xfade. One line to add your own.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M8 6v14M16 6v14"/></svg></div><h3>Titles &amp; captions</h3><p>Styled text clips, a caption track, SRT import/export, and local automatic transcription with whisper.cpp.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/></svg></div><h3>Colour &amp; effects</h3><p>Exposure, temperature, contrast, saturation, LUTs, blur, sharpen, chroma key, grain, vignette, one-click looks.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 10v4M7 6v12M11 9v6M15 4v16M19 8v8"/></svg></div><h3>Audio</h3><p>Volume and fades with drag handles, mute/solo, detach audio, speed with pitch correction, silence removal.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></div><h3>Any format in</h3><p>Anything FFmpeg reads: MP4, MOV, MKV, ProRes, WebM, images, audio. Proxies keep 4K smooth.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M6 9l6 6 6-6"/><path d="M4 21h16"/></svg></div><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only or a single frame. Target a file size. Hardware encoders when available.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="research">
+    <div class="wrap split">
+      <div>
+        <div class="kicker">Made for papers and demos</div>
+        <h2>Comparison videos in minutes.</h2>
+        <p class="sub" style="margin-bottom:22px">The parts of a research video that usually take an afternoon in a general-purpose editor are one action here.</p>
+        <ul>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Layouts.</b> Side by side, three across, 2×2, picture in picture. "Compare with labels" adds Baseline · Ours · Ground truth above each cell.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Sync by audio.</b> Two recordings of the same run line up automatically.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Timecode and frame overlays,</b> arrows, boxes, freeze frames, and a timestamped frame export for figures.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Venue presets.</b> ICRA, IROS, RSS, CoRL, CVPR, NeurIPS: the export dialog warns about length and picks a bitrate that lands under the size limit.</span></li>
+        </ul>
+      </div>
+      <div class="mini" aria-hidden="true">
+        <div class="row">
+          <div class="tile a"><span>Baseline</span></div>
+          <div class="tile b"><span>Ours</span></div>
+          <div class="tile c"><span>Ground truth</span></div>
+        </div>
+        <div class="tc"><span>00:00:07.400 · frame 222</span><b>≤ 100 MB · 1080p · 30 fps</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="wrap">
+      <div class="kicker">Build &amp; run</div>
+      <h2>Three steps. No download page.</h2>
+      <p class="sub">Requires <a href="https://rustup.rs" style="color:var(--accent);font-weight:600">Rust</a> and the <a href="https://tauri.app/start/prerequisites/" style="color:var(--accent);font-weight:600">Tauri prerequisites</a> for your platform. FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
+      <div class="build-box">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-os="mac">macOS</button>
+          <button class="tab" data-os="win">Windows</button>
+          <button class="tab" data-os="linux">Linux</button>
+        </div>
+        <pre data-os="mac"><code><span class="c"># 1. Toolchain</span>
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 xcode-select --install
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git rve
+git clone https://github.com/rueyday/RueyMediaEditor.git
 cd RueyMediaEditor
 
-<span class="c"># 3. Run (development build) …</span>
-cargo tauri dev
-
-<span class="c"># … or build an app bundle (src-tauri/target/release/bundle/)</span>
-cargo tauri build</code></pre>
-      </div>
-      <div class="os-pane" data-os="win" hidden>
-        <pre><code><span class="c"># 1. Rust + Tauri CLI (PowerShell). Also install "Desktop development with C++"</span>
-<span class="c">#    from the Visual Studio Build Tools, and the WebView2 runtime if missing.</span>
+<span class="c"># 3. Run (or `cargo tauri build` for an .app in src-tauri/target/release/bundle/)</span>
+cargo tauri dev</code></pre>
+        <pre data-os="win" hidden><code><span class="c"># 1. Toolchain (PowerShell). Also install "Desktop development with C++"</span>
+<span class="c">#    from Visual Studio Build Tools, and the WebView2 runtime if missing.</span>
 winget install Rustlang.Rustup
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git rve
+git clone https://github.com/rueyday/RueyMediaEditor.git
 cd RueyMediaEditor
 
-<span class="c"># 3. Run (development build) …</span>
-cargo tauri dev
-
-<span class="c"># … or build an installer (src-tauri\target\release\bundle\)</span>
-cargo tauri build</code></pre>
-      </div>
-      <div class="os-pane" data-os="linux" hidden>
-        <pre><code><span class="c"># 1. Rust + Tauri CLI + system libraries (Debian / Ubuntu shown)</span>
+<span class="c"># 3. Run (or `cargo tauri build` for an installer in src-tauri\target\release\bundle\)</span>
+cargo tauri dev</code></pre>
+        <pre data-os="linux" hidden><code><span class="c"># 1. Toolchain + libraries (Debian / Ubuntu shown)</span>
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
   libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev ffmpeg
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git rve
+git clone https://github.com/rueyday/RueyMediaEditor.git
 cd RueyMediaEditor
 
-<span class="c"># 3. Run (development build) …</span>
-cargo tauri dev
-
-<span class="c"># … or build an AppImage / .deb (src-tauri/target/release/bundle/)</span>
-cargo tauri build</code></pre>
+<span class="c"># 3. Run (or `cargo tauri build` for an AppImage / .deb)</span>
+cargo tauri dev</code></pre>
+        <div class="copy"><span>First build compiles the dependencies (a few minutes). After that: edit, rebuild in seconds.</span><button id="copy-btn">Copy commands</button></div>
       </div>
-      <p class="note">First build takes a few minutes while Rust compiles the dependencies. After that, changes to the UI (<code>ui/</code>) show up on reload and changes to the engine (<code>src-tauri/</code>) rebuild in seconds.</p>
-    </section>
+      <p class="reqs">Want to change something? The interface is plain HTML, CSS and JavaScript in <code class="inl">ui/</code>. The engine is Rust in <code class="inl">src-tauri/</code>; adding an effect is one match arm. The <a href="https://github.com/rueyday/RueyMediaEditor#readme">README</a> walks through the architecture.</p>
+    </div>
+  </section>
 
-    <section>
-      <h2>What it does</h2>
-      <div class="grid">
-        <div class="card"><h3>Timeline</h3><p>Unlimited video and audio tracks, drag to move and trim, razor, ripple delete, snapping, markers, in/out points, zoom, undo/redo.</p></div>
-        <div class="card"><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity and crop, all keyframable with linear or eased interpolation. Move and resize directly on the preview.</p></div>
-        <div class="card"><h3>Transitions</h3><p>Cross dissolve, fade to black/white, wipes, slides, circles, zoom, pixelize and more, powered by FFmpeg's xfade.</p></div>
-        <div class="card"><h3>Titles &amp; colour</h3><p>Text clips with font size, weight, alignment, background box and shadow. Solid colour clips for backgrounds.</p></div>
-        <div class="card"><h3>Effects</h3><p>Colour correction with exposure and temperature, blur, sharpen, flip, black &amp; white, sepia, invert, vignette, chroma key, LUTs, film grain, one-click looks.</p></div>
-        <div class="card"><h3>Captions</h3><p>Caption lane, SRT import/export, and local automatic transcription with whisper.cpp. Burned in on export.</p></div>
-        <div class="card"><h3>Made for research videos</h3><p>Side-by-side and grid comparisons with labels, sync clips by audio, timecode and frame-number overlays, arrows and boxes, freeze frames, silence removal, conference presets that respect size limits.</p></div>
-        <div class="card"><h3>Audio</h3><p>Volume, fades, mute/solo per track, speed with pitch correction, detach audio from video.</p></div>
-        <div class="card"><h3>Any format in</h3><p>Anything FFmpeg reads: MP4, MOV, MKV, AVI, WebM, ProRes, images, MP3, WAV… Proxies keep 4K editing smooth.</p></div>
-        <div class="card"><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only, or a single frame. Target a file size. Hardware encoders (VideoToolbox, NVENC, Quick Sync, AMF) when available.</p></div>
+  <section>
+    <div class="wrap">
+      <div class="kicker">Why build it yourself</div>
+      <h2>Trust the code, not a binary.</h2>
+      <div class="why" style="margin-top:28px">
+        <div class="card"><h3>Read it</h3><p>About ten thousand lines, no bundler, no framework. <code class="inl">export.rs</code> shows exactly what runs on your footage.</p></div>
+        <div class="card"><h3>Own it</h3><p>Your files never leave your machine. There is nothing to sign in to and nothing that phones home.</p></div>
+        <div class="card"><h3>Change it</h3><p>Same toolchain as everyone else. Add the feature you need, rebuild, and send a pull request if you like.</p></div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section>
-      <h2>Why "build it yourself"?</h2>
-      <p>Downloading an unsigned binary from a stranger is a leap of faith. RueyMediaEditor doesn't ask for it. The whole editor is about ten thousand lines of readable Rust and JavaScript, with no bundler, no framework and no telemetry. Clone it, skim <code>src-tauri/src/export.rs</code> to see exactly what runs on your files, then compile it with the same toolchain everyone else uses. Want a feature? Add it and rebuild.</p>
-    </section>
-
-    <section>
-      <h2>Hacking on it</h2>
-      <ul class="plain">
-        <li><code>ui/</code> — the interface: plain HTML, CSS and ES modules. Open <code>ui/index.html</code> in a browser to work on it without compiling anything.</li>
-        <li><code>src-tauri/src/export.rs</code> — turns a project into one FFmpeg filter graph. Adding an effect is one match arm here and one entry in <code>ui/js/model.js</code>.</li>
-        <li><code>src-tauri/src/commands.rs</code> — the API between the UI and the engine.</li>
-        <li>The <a href="https://github.com/rueyday/RueyMediaEditor#readme">README</a> explains the architecture in detail.</li>
-      </ul>
-    </section>
-  </main>
-
-  <footer class="wrap">
-    <p>MIT licensed. Uses <a href="https://ffmpeg.org">FFmpeg</a> (LGPL/GPL), <a href="https://tauri.app">Tauri</a> and the <a href="https://rsms.me/inter/">Inter</a> font.</p>
+  <footer>
+    <div class="wrap">
+      <span>MIT licensed. Uses <a href="https://ffmpeg.org">FFmpeg</a> (LGPL/GPL), <a href="https://tauri.app">Tauri</a> and the <a href="https://rsms.me/inter/">Inter</a> font.</span>
+      <a href="https://github.com/rueyday/RueyMediaEditor">github.com/rueyday/RueyMediaEditor</a>
+    </div>
   </footer>
 
   <script>
-    for (const tab of document.querySelectorAll('.tab')) {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
-        document.querySelectorAll('.os-pane').forEach(p => { p.hidden = p.dataset.os !== tab.dataset.os; });
-      });
-    }
+    const tabs = document.querySelectorAll('.tab');
+    const show = os => {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.os === os));
+      document.querySelectorAll('pre[data-os]').forEach(p => { p.hidden = p.dataset.os !== os; });
+    };
+    tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.os)));
     const ua = navigator.userAgent;
-    const os = /Windows/.test(ua) ? 'win' : /Linux/.test(ua) && !/Android/.test(ua) ? 'linux' : 'mac';
-    document.querySelector(`.tab[data-os="${os}"]`)?.click();
+    show(/Windows/.test(ua) ? 'win' : /Linux/.test(ua) && !/Android/.test(ua) ? 'linux' : 'mac');
+    document.getElementById('copy-btn').addEventListener('click', e => {
+      const pre = document.querySelector('pre[data-os]:not([hidden])');
+      const text = pre.innerText.split('\n').filter(l => !l.trim().startsWith('#') && l.trim()).join('\n');
+      navigator.clipboard?.writeText(text).then(() => { e.target.textContent = 'Copied'; setTimeout(() => { e.target.textContent = 'Copy commands'; }, 1500); });
+    });
   </script>
 </body>
 </html>

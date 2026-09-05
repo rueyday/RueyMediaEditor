@@ -31,7 +31,7 @@ export function fontFamilyFor(path) {
 }
 const sourceTime = (clip, t) => clip.reverse ? clip.out - (t - clip.start) * clip.speed : clip.in + (t - clip.start) * clip.speed;
 
-const now = () => (audioCtx ? audioCtx.currentTime : performance.now() / 1000);
+const now = () => performance.now() / 1000; // wall clock; the audio context only mixes
 const PW = () => state.project.settings.width;
 const PH = () => state.project.settings.height;
 

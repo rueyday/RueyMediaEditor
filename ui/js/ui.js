@@ -76,7 +76,7 @@ const ICONS = {
 };
 export function icon(name) {
   const wrap = document.createElement('span');
-  wrap.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+  wrap.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
   return wrap.firstChild;
 }
 export function btn(label, opts = {}) {

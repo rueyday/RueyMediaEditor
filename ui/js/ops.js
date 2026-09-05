@@ -390,11 +390,15 @@ export function applyLayout(id, { labels = null } = {}) {
       clip.transform = { ...clip.transform, x: Math.round(cell.x), y: Math.round(cell.y), scale: Math.round(scale * 1000) / 1000, rotation: 0 };
       delete clip.keyframes.x; delete clip.keyframes.y; delete clip.keyframes.scale; delete clip.keyframes.rotation;
       if (labels && labels[i]) {
-        let track = state.project.tracks.find(t => t.kind === 'video' && t.name === 'Labels');
-        if (!track) { track = newTrack('video', 'Labels'); state.project.tracks.unshift(track); }
         const fs = Math.round(Math.min(cell.w, cell.h) * 0.11);
         const title = newClip({ kind: 'title', start: clip.start, in: 0, out: clipDuration(clip), name: labels[i], title: { ...newTitle(labels[i]), font_size: fs, background: '#000000a0', padding: Math.round(fs * 0.3), shadow: false }, transform: { x: Math.round(cell.x), y: Math.round(cell.y - cell.h / 2 + fs), scale: 1, rotation: 0, opacity: 1 } });
-        title.start = freePosition(track, title, clip.start, clipDuration(clip)) ?? clipEndOfTrack(track);
+        // Labels of clips that overlap in time each need their own track.
+        let track = state.project.tracks.find(t => t.kind === 'video' && t.name.startsWith('Labels') && !overlaps(t, title, clip.start, clipDuration(clip)));
+        if (!track) {
+          const n = state.project.tracks.filter(t => t.name.startsWith('Labels')).length;
+          track = newTrack('video', n ? `Labels ${n + 1}` : 'Labels');
+          state.project.tracks.unshift(track);
+        }
         track.clips.push(title);
         labelIds.push(title.id);
       }

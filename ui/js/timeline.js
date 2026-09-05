@@ -282,6 +282,14 @@ function updateSelection() {
 function renderLanesOnly() {
   lanesEl.replaceChildren(captionLane(), ...state.project.tracks.map(trackLane));
 }
+/** Cheap position update for a clip element during drags (full render happens on release). */
+function positionClipEl(clip) {
+  const el = lanesEl.querySelector(`.clip[data-id="${clip.id}"]`);
+  if (!el) return false;
+  el.style.left = `${t2x(clip.start)}px`;
+  el.style.width = `${Math.max(2, clipDuration(clip) * state.zoom)}px`;
+  return true;
+}
 
 function captionHeader() {
   const head = h('div', { class: 'track-head caption', title: 'Captions (edit them in the Captions tab)' }, h('span', { class: 'tname' }, 'CC'),
@@ -491,10 +499,16 @@ function moveDrag(ev) {
       track = drag.primaryTrack;
     }
     it.clip.start = ns;
+    if (it.track !== track) drag.trackChanged = true;
     it.track = track;
   }
-  renderLanesOnly();
-  for (const it of drag.items) { const el = lanesEl.querySelector(`.clip[data-id="${it.clip.id}"]`); el && el.classList.add('dragging'); }
+  if (drag.trackChanged) {
+    drag.trackChanged = false;
+    renderLanesOnly();
+    for (const it of drag.items) { const el = lanesEl.querySelector(`.clip[data-id="${it.clip.id}"]`); el && el.classList.add('dragging'); }
+  } else {
+    for (const it of drag.items) positionClipEl(it.clip);
+  }
 }
 
 function trimDrag(ev) {
@@ -525,7 +539,7 @@ function trimDrag(ev) {
     clip.out = orig.in + (newEnd - orig.start) * orig.speed;
     showSnap(snap(clipEnd(orig) + dx, new Set([clip.id])).snapped);
   }
-  renderLanesOnly();
+  positionClipEl(clip);
 }
 
 function fadeDrag(ev) {
@@ -534,7 +548,15 @@ function fadeDrag(ev) {
   const d = clipDuration(clip);
   if (side === 'in') clip.fade_in = clamp(orig.in + dx, 0, d - clip.fade_out);
   else clip.fade_out = clamp(orig.out - dx, 0, d - clip.fade_in);
-  renderLanesOnly();
+  const el = lanesEl.querySelector(`.clip[data-id="${clip.id}"]`);
+  if (el) {
+    const hIn = el.querySelector('.fade-handle.in'), hOut = el.querySelector('.fade-handle.out');
+    const sIn = el.querySelector('.fade-shade.in'), sOut = el.querySelector('.fade-shade.out');
+    if (hIn) hIn.style.left = `${Math.max(2, clip.fade_in * state.zoom - 5)}px`;
+    if (hOut) hOut.style.right = `${Math.max(2, clip.fade_out * state.zoom - 5)}px`;
+    if (sIn) sIn.style.width = `${clip.fade_in * state.zoom}px`;
+    if (sOut) sOut.style.width = `${clip.fade_out * state.zoom}px`;
+  }
 }
 
 function marqueeDrag(ev) {
