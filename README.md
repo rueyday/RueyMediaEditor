@@ -2,7 +2,7 @@
 
 A free, open-source desktop video editor. Compiled Rust engine driving native FFmpeg, with a plain HTML/CSS/JavaScript interface in a native window (Tauri). No installer: you clone it, build it, run it.
 
-- **Website (build & run instructions):** the `docs/` folder, served by GitHub Pages
+- **Website:** `index.html` at the repo root (assets in `docs/`), served by GitHub Pages from the `main` branch root
 - **Licence:** MIT (FFmpeg itself is LGPL/GPL and runs as a separate program)
 
 ![RueyMediaEditor with a side-by-side comparison, labels, captions and a multi-track timeline](docs/screenshot.png)
@@ -111,7 +111,7 @@ src-tauri/               Engine (Rust).
   src/export.rs          Project → ffmpeg filter graph and command line
   tests/                 Integration test that runs a real export
 
-docs/                    The website (GitHub Pages: Settings → Pages → Deploy from branch → /docs)
+index.html, docs/        The website (GitHub Pages: Settings → Pages → Deploy from branch → main → / root)
 ```
 
 **Division of labour.** The UI owns the project (it is the source of truth and holds the undo history). The engine is stateless except for running processes: every command receives what it needs. For export, the UI sends the entire project JSON; Rust builds one FFmpeg invocation and streams progress back as events. The preview is a separate, approximate renderer written for interactivity; the "Accurate frame" button asks Rust to render a single frame with the real graph, so anything the canvas can't do (chroma key, LUTs, sharpen, fancy transitions) can still be checked before exporting.

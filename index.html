@@ -7,33 +7,38 @@
   <meta name="description" content="Free, open-source desktop video editor with a Rust + FFmpeg engine, built for research videos. Side-by-side comparisons, captions, keyframes, fast native export. Clone it, build it, run it.">
   <meta property="og:title" content="RueyMediaEditor">
   <meta property="og:description" content="Free, open-source desktop video editor built for research videos. Clone it, build it, run it.">
-  <meta property="og:image" content="screenshot.png">
+  <meta property="og:image" content="docs/screenshot.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="docs/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232f6fe0'/%3E%3Cstop offset='1' stop-color='%237c5cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-weight='800' font-size='18' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
 </head>
 <body>
   <div class="bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid"></div></div>
 
-  <header class="nav">
-    <div class="wrap">
-      <a class="brand" href="#"><span class="mark">R</span> RueyMediaEditor</a>
-      <nav class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#research">For research</a>
-        <a href="#build">Build &amp; run</a>
-        <a class="star" href="https://github.com/rueyday/RueyMediaEditor"><span class="s">★</span> Star on GitHub</a>
-      </nav>
-    </div>
-  </header>
+  <aside class="side">
+    <a class="brand" href="#top"><span class="mark">R</span><span>RueyMediaEditor<small>Open-source video editor</small></span></a>
+    <nav id="sidenav">
+      <a href="#top" class="active"><span class="n">01</span>Overview</a>
+      <a href="#app"><span class="n">02</span>The editor</a>
+      <a href="#research"><span class="n">03</span>For research</a>
+      <a href="#features"><span class="n">04</span>Features</a>
+      <a href="#build"><span class="n">05</span>Build &amp; run</a>
+      <a href="#trust"><span class="n">06</span>Why self-build</a>
+      <a href="https://github.com/rueyday/RueyMediaEditor#readme"><span class="n">07</span>Documentation ↗</a>
+    </nav>
+    <div class="grow"></div>
+    <a class="star" href="https://github.com/rueyday/RueyMediaEditor"><span class="s">★</span> Star on GitHub</a>
+    <div class="meta">MIT licensed · Rust + FFmpeg + Tauri<br><a href="https://github.com/rueyday/RueyMediaEditor">github.com/rueyday/RueyMediaEditor</a></div>
+  </aside>
 
+  <div class="main" id="top">
   <section class="hero">
     <div class="wrap">
-      <div>
+      <div class="copy">
         <span class="eyebrow"><span class="pulse"></span> Open source · Offline · No account · No watermark</span>
-        <h1>The video editor<br>you <span class="rotator"><span>compile</span><span>read</span><span>own</span></span><br>yourself.</h1>
+        <h1>The video editor<br>you <span class="rotator"><span>compile</span><span>read</span><span>own</span></span> yourself.</h1>
         <p class="lede">A free desktop editor with a compiled Rust + FFmpeg engine, made for research videos. Multi-track timeline, side-by-side comparisons, captions, keyframes, and export that runs at native speed. No installer to trust: clone it, build it, run it.</p>
         <div class="cta">
           <a class="btn dark" href="#build"><span>Build &amp; run in 3 steps →</span></a>
@@ -84,7 +89,7 @@
         <div class="shot" id="shot">
           <div class="window">
             <div class="bar"><i></i><i></i><i></i><span>ICRA supplementary v3 — RueyMediaEditor</span></div>
-            <img src="screenshot.png" alt="RueyMediaEditor showing a side-by-side comparison of two experiment videos with labels, captions and a multi-track timeline" width="1440" height="900">
+            <img src="docs/screenshot.png" alt="RueyMediaEditor showing a side-by-side comparison of two experiment videos with labels, captions and a multi-track timeline" width="1440" height="900">
           </div>
         </div>
       </div>
@@ -150,7 +155,7 @@
     </div>
   </section>
 
-  <section>
+  <section id="trust">
     <div class="wrap">
       <div class="reveal">
         <div class="kicker">Why build it yourself</div>
@@ -170,8 +175,17 @@
       <a href="https://github.com/rueyday/RueyMediaEditor">github.com/rueyday/RueyMediaEditor</a>
     </div>
   </footer>
+  </div>
 
   <script>
+    // Sidebar: highlight the section in view
+    const links = [...document.querySelectorAll('#sidenav a[href^="#"]')];
+    const targets = links.map(a => document.querySelector(a.getAttribute('href') === '#top' ? '.hero' : a.getAttribute('href'))).filter(Boolean);
+    const navIo = new IntersectionObserver(es => {
+      es.forEach(e => { if (e.isIntersecting) { const idx = targets.indexOf(e.target); links.forEach((a, i) => a.classList.toggle('active', i === idx)); } });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    targets.forEach(t => navIo.observe(t));
+
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Scroll reveals
