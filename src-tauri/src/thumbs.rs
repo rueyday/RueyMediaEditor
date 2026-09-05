@@ -24,7 +24,13 @@ pub const FILMSTRIP_W: u32 = 160;
 pub const FILMSTRIP_H: u32 = 90;
 
 /// One JPEG holding `FILMSTRIP_FRAMES` thumbnails side by side.
-pub fn filmstrip(tools: &Tools, path: &Path, duration: f64, is_image: bool, out: &Path) -> Result<(), String> {
+pub fn filmstrip(
+    tools: &Tools,
+    path: &Path,
+    duration: f64,
+    is_image: bool,
+    out: &Path,
+) -> Result<(), String> {
     if out.exists() {
         return Ok(());
     }
@@ -57,9 +63,18 @@ pub const WAVEFORM_PPS: usize = 25; // peaks per second
 pub fn waveform(tools: &Tools, path: &Path) -> Result<Vec<f32>, String> {
     const RATE: usize = 4000;
     let mut cmd = command(&tools.ffmpeg);
-    cmd.args(["-hide_banner", "-loglevel", "error", "-i"]).arg(path).args([
-        "-vn", "-ac", "1", "-ar", &RATE.to_string(), "-f", "s16le", "-",
-    ]);
+    cmd.args(["-hide_banner", "-loglevel", "error", "-i"])
+        .arg(path)
+        .args([
+            "-vn",
+            "-ac",
+            "1",
+            "-ar",
+            &RATE.to_string(),
+            "-f",
+            "s16le",
+            "-",
+        ]);
     let bytes = run_simple(cmd)?;
     let window = RATE / WAVEFORM_PPS;
     let mut peaks = Vec::with_capacity(bytes.len() / 2 / window + 1);
@@ -81,7 +96,17 @@ pub fn waveform(tools: &Tools, path: &Path) -> Result<Vec<f32>, String> {
     Ok(peaks)
 }
 
-/// H.264 proxy for smooth preview of formats the webview can't play.
+/// File name of the proxy for the current platform. Linux's WebKitGTK usually
+/// lacks an H.264 decoder but ships VP8 via gst-plugins-good, so use WebM there.
+pub fn proxy_name() -> &'static str {
+    if cfg!(target_os = "linux") {
+        "proxy.webm"
+    } else {
+        "proxy.mp4"
+    }
+}
+
+/// Small preview copy of a video for formats the webview can't play (or heavy 4K).
 pub fn proxy(
     tools: &Tools,
     path: &Path,
@@ -90,18 +115,70 @@ pub fn proxy(
     slot: &ChildSlot,
     on_progress: impl FnMut(crate::ffmpeg::Progress),
 ) -> Result<PathBuf, String> {
-    let tmp = out.with_extension("part.mp4");
+    let webm = out.extension().map(|e| e == "webm").unwrap_or(false);
+    let tmp = out.with_extension(if webm { "part.webm" } else { "part.mp4" });
     let mut cmd = command(&tools.ffmpeg);
-    cmd.args(["-hide_banner", "-y", "-loglevel", "error", "-progress", "pipe:1", "-nostats", "-i"])
-        .arg(path)
-        .args([
-            "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
-            "-vf", &format!("scale='min({max_width},iw)':-2,format=yuv420p"),
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-g", "30",
-            "-c:a", "aac", "-b:a", "160k", "-ac", "2",
-            "-movflags", "+faststart",
-        ])
-        .arg(&tmp);
+    cmd.args([
+        "-hide_banner",
+        "-y",
+        "-loglevel",
+        "error",
+        "-progress",
+        "pipe:1",
+        "-nostats",
+        "-i",
+    ])
+    .arg(path)
+    .args([
+        "-map",
+        "0:v:0",
+        "-map",
+        "0:a:0?",
+        "-sn",
+        "-dn",
+        "-vf",
+        &format!("scale='min({max_width},iw)':-2,format=yuv420p"),
+    ]);
+    if webm {
+        cmd.args([
+            "-c:v",
+            "libvpx",
+            "-deadline",
+            "realtime",
+            "-cpu-used",
+            "6",
+            "-b:v",
+            "4M",
+            "-g",
+            "30",
+            "-c:a",
+            "libopus",
+            "-b:a",
+            "128k",
+            "-ac",
+            "2",
+        ]);
+    } else {
+        cmd.args([
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "22",
+            "-g",
+            "30",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "160k",
+            "-ac",
+            "2",
+            "-movflags",
+            "+faststart",
+        ]);
+    }
+    cmd.arg(&tmp);
     run_with_progress(cmd, slot, on_progress)?;
     std::fs::rename(&tmp, out).map_err(|e| format!("Cannot finish proxy: {e}"))?;
     Ok(out.to_path_buf())

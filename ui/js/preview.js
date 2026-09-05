@@ -2,7 +2,7 @@
 // It approximates the ffmpeg export; "Accurate frame" renders through ffmpeg.
 
 import { state, bus, beginEdit, endEdit, setPlayhead, primaryClip, select } from './state.js';
-import { clipDuration, clipEnd, transformAt, cssFilter, gainAt, hasAudio, projectDuration, TRANSITIONS, prevClip, setKeyframe, isVisual, hasExportOnlyEffect, captionsAt, isGenerated } from './model.js';
+import { clipEnd, transformAt, cssFilter, gainAt, hasAudio, projectDuration, TRANSITIONS, setKeyframe, isVisual, hasExportOnlyEffect, captionsAt, isGenerated } from './model.js';
 import { fileSrc, invoke, isTauri } from './bridge.js';
 import { h, btn, icon, fmtTimecode, clamp, toast, uid } from './ui.js';
 
@@ -114,7 +114,7 @@ function acquire(clip) {
     el.muted = !audioCtx; // silent until routed through the mixer
     el.src = src;
   }
-  e = { el, src, kind: clip.kind, gain: null, failed: false, seekTarget: -1, mediaId: clip.media_id };
+  e = { el, src, kind: clip.kind, gain: null, failed: false, seekTarget: -1, mediaId: clip.media_id, created: performance.now() };
   el.addEventListener('error', () => onMediaError(clip, e));
   if (audioCtx && clip.kind !== 'image') attachGain(e);
   pool.set(clip.id, e);
@@ -246,6 +246,8 @@ function syncMedia() {
     const e = acquire(clip);
     if (!e || e.kind === 'image') continue;
     const el = e.el;
+    // A source that never reaches HAVE_CURRENT_DATA cannot be decoded here (e.g. no H.264 on Linux WebKitGTK): make a proxy.
+    if (!e.failed && el.readyState < 2 && performance.now() - e.created > 8000 && !e.el.error) onMediaError(clip, e);
     playingIds.add(clip.id);
     const visual = isVisual(clip) && !track.hidden;
     const audible = hasAudio(clip, state.project) && !clip.muted && trackAudible(track);

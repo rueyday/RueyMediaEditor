@@ -69,7 +69,15 @@ fn default_caption_margin() -> f64 {
 }
 impl Default for CaptionStyle {
     fn default() -> Self {
-        CaptionStyle { font_size: 48.0, color: "#ffffff".into(), background: default_caption_bg(), position: "bottom".into(), margin: 60.0, weight: "bold".into(), font_file: None }
+        CaptionStyle {
+            font_size: 48.0,
+            color: "#ffffff".into(),
+            background: default_caption_bg(),
+            position: "bottom".into(),
+            margin: 60.0,
+            weight: "bold".into(),
+            font_file: None,
+        }
     }
 }
 
@@ -101,7 +109,16 @@ fn default_tc_size() -> f64 {
 }
 impl Default for Timecode {
     fn default() -> Self {
-        Timecode { format: "hms".into(), source: "timeline".into(), font_size: 40.0, color: "#ffffff".into(), background: default_caption_bg(), position: "top-left".into(), offset: 0.0, label: String::new() }
+        Timecode {
+            format: "hms".into(),
+            source: "timeline".into(),
+            font_size: 40.0,
+            color: "#ffffff".into(),
+            background: default_caption_bg(),
+            position: "top-left".into(),
+            offset: 0.0,
+            label: String::new(),
+        }
     }
 }
 
@@ -118,7 +135,12 @@ fn default_sample_rate() -> u32 {
 }
 impl Default for Settings {
     fn default() -> Self {
-        Settings { width: 1920, height: 1080, fps: 30.0, sample_rate: 48000 }
+        Settings {
+            width: 1920,
+            height: 1080,
+            fps: 30.0,
+            sample_rate: 48000,
+        }
     }
 }
 
@@ -249,7 +271,13 @@ pub struct Transform {
 }
 impl Default for Transform {
     fn default() -> Self {
-        Transform { x: 0.0, y: 0.0, scale: 1.0, rotation: 0.0, opacity: 1.0 }
+        Transform {
+            x: 0.0,
+            y: 0.0,
+            scale: 1.0,
+            rotation: 0.0,
+            opacity: 1.0,
+        }
     }
 }
 

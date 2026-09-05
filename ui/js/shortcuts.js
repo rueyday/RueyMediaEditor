@@ -1,6 +1,6 @@
 // Keyboard shortcuts.
 
-import { state, bus, undo, redo, setPlayhead } from './state.js';
+import { state, bus, undo, redo } from './state.js';
 import { projectDuration } from './model.js';
 import * as ops from './ops.js';
 import * as timeline from './timeline.js';

@@ -107,10 +107,6 @@ export function fmtBytes(b) {
   if (b < 1024 ** 3) return `${(b / 1024 ** 2).toFixed(1)} MB`;
   return `${(b / 1024 ** 3).toFixed(2)} GB`;
 }
-export function debounce(fn, ms) {
-  let t;
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
-}
 export function baseName(path) {
   return String(path || '').split(/[\\/]/).pop();
 }

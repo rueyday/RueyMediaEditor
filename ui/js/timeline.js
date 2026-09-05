@@ -1,7 +1,7 @@
 // Multi-track timeline: rendering, selection, dragging, trimming, snapping.
 
-import { state, bus, edit, beginEdit, endEdit, select, clearSelection, selectedClips, setPlayhead, undo, redo, canUndo, canRedo } from './state.js';
-import { clipDuration, clipEnd, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, sortedClips, TRANSITIONS, isGenerated } from './model.js';
+import { state, bus, edit, beginEdit, endEdit, select, clearSelection, selectedClips, setPlayhead } from './state.js';
+import { clipDuration, clipEnd, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, TRANSITIONS } from './model.js';
 import { selectCaption } from './captions.js';
 import * as ops from './ops.js';
 import { h, btn, icon, fmtTimecode, clamp, contextMenu, promptDialog, confirmDialog, toast, $ } from './ui.js';
@@ -700,7 +700,3 @@ function trackMenu(ev, track) {
   ]);
 }
 
-export function scrollToPlayhead() {
-  const x = t2x(state.playhead);
-  if (x < viewport.scrollLeft || x > viewport.scrollLeft + viewport.clientWidth) viewport.scrollLeft = Math.max(0, x - viewport.clientWidth / 2);
-}

@@ -1,7 +1,7 @@
 // Application bootstrap: wires the panels together and handles project files.
 
 import { state, bus, replaceProject, undo, redo, canUndo, canRedo, undoLabel, redoLabel, clearSelection, saveSettings } from './state.js';
-import { newProject, PROJECT_VERSION, projectDuration } from './model.js';
+import { newProject, PROJECT_VERSION } from './model.js';
 import { invoke, dialog, onFileDrop, isTauri, PROJECT_FILTER } from './bridge.js';
 import { h, btn, icon, modal, confirmDialog, toast, baseName, $ } from './ui.js';
 import { initPreview, pause } from './preview.js';

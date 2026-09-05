@@ -1,8 +1,8 @@
 // Editing operations on the project. Used by the timeline, menus and shortcuts.
 
 import { state, bus, edit, select, clearSelection, selectedClips, setPlayhead } from './state.js';
-import { newClip, newTrack, newTitle, newShape, newTimecode, clipDuration, clipEnd, findClip, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, sortedClips, isGenerated } from './model.js';
-import { invoke, dialog, isTauri } from './bridge.js';
+import { newClip, newTrack, newTitle, newShape, newTimecode, clipDuration, clipEnd, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, isGenerated } from './model.js';
+import { invoke } from './bridge.js';
 import { modal, numberInput, promptDialog, h } from './ui.js';
 import { uid, toast, clamp } from './ui.js';
 

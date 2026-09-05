@@ -1,10 +1,10 @@
 // Inspector: properties of the selected clip or track.
 
-import { state, bus, edit, beginEdit, endEdit, primaryClip, selectedClips } from './state.js';
-import { KEYFRAMABLE, kfValue, setKeyframe, removeKeyframe, keyframeAt, clipDuration, clipEnd, isVisual, hasAudio, TRANSITIONS, EFFECTS, newEffect, prevClip, nextClip, transformAt, LOOKS, SHAPES, isGenerated } from './model.js';
+import { state, bus, edit, beginEdit, endEdit, selectedClips } from './state.js';
+import { KEYFRAMABLE, kfValue, setKeyframe, removeKeyframe, keyframeAt, clipDuration, clipEnd, isVisual, hasAudio, TRANSITIONS, EFFECTS, newEffect, prevClip, nextClip, LOOKS, SHAPES } from './model.js';
 import * as ops from './ops.js';
 import { h, btn, icon, propRow, numberInput, rangeInput, selectInput, fmtTimecode, fmtNum, clamp, toast } from './ui.js';
-import { dialog, isTauri } from './bridge.js';
+import { dialog } from './bridge.js';
 import { baseName } from './ui.js';
 
 let root, body, current = null, liveToken = null;

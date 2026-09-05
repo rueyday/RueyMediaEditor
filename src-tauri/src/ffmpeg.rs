@@ -142,7 +142,12 @@ pub fn locate(app_data: &Path, custom_dir: Option<&Path>) -> Option<Tools> {
         PathBuf::from(exe_name("ffprobe")),
     ));
     // GUI apps on macOS / Linux often don't inherit the shell PATH.
-    for dir in ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/snap/bin"] {
+    for dir in [
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+        "/usr/bin",
+        "/snap/bin",
+    ] {
         if let Some((f, p)) = pair_in_dir(Path::new(dir), "") {
             candidates.push(("path", f, p));
         }
@@ -150,7 +155,12 @@ pub fn locate(app_data: &Path, custom_dir: Option<&Path>) -> Option<Tools> {
     for (source, f, p) in candidates {
         if let Some(version) = version_of(&f) {
             if version_of(&p).is_some() {
-                return Some(Tools { ffmpeg: f, ffprobe: p, source: source.to_string(), version });
+                return Some(Tools {
+                    ffmpeg: f,
+                    ffprobe: p,
+                    source: source.to_string(),
+                    version,
+                });
             }
         }
     }
@@ -159,7 +169,10 @@ pub fn locate(app_data: &Path, custom_dir: Option<&Path>) -> Option<Tools> {
 
 /// Downloads static ffmpeg + ffprobe builds into the app data directory.
 /// `progress(name, downloaded_bytes, total_bytes)` is called while downloading.
-pub fn download(app_data: &Path, mut progress: impl FnMut(&str, u64, u64)) -> Result<Tools, String> {
+pub fn download(
+    app_data: &Path,
+    mut progress: impl FnMut(&str, u64, u64),
+) -> Result<Tools, String> {
     let platform = asset_platform().ok_or_else(|| {
         "No prebuilt FFmpeg is available for this platform. Install FFmpeg yourself and point RueyMediaEditor at it in Settings.".to_string()
     })?;
@@ -183,7 +196,9 @@ pub fn download(app_data: &Path, mut progress: impl FnMut(&str, u64, u64)) -> Re
         let mut chunk = [0u8; 64 * 1024];
         let mut got = 0u64;
         loop {
-            let n = reader.read(&mut chunk).map_err(|e| format!("Download of {name} failed: {e}"))?;
+            let n = reader
+                .read(&mut chunk)
+                .map_err(|e| format!("Download of {name} failed: {e}"))?;
             if n == 0 {
                 break;
             }
@@ -198,7 +213,8 @@ pub fn download(app_data: &Path, mut progress: impl FnMut(&str, u64, u64)) -> Re
             .map_err(|e| format!("Could not decompress {name}: {e}"))?;
         let dest = dir.join(exe_name(name));
         let tmp = dir.join(format!("{name}.part"));
-        std::fs::write(&tmp, &binary).map_err(|e| format!("Cannot write {}: {e}", tmp.display()))?;
+        std::fs::write(&tmp, &binary)
+            .map_err(|e| format!("Cannot write {}: {e}", tmp.display()))?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -206,7 +222,8 @@ pub fn download(app_data: &Path, mut progress: impl FnMut(&str, u64, u64)) -> Re
         }
         std::fs::rename(&tmp, &dest).map_err(|e| format!("Cannot move {}: {e}", dest.display()))?;
     }
-    locate(app_data, None).ok_or_else(|| "FFmpeg was downloaded but does not run on this machine.".to_string())
+    locate(app_data, None)
+        .ok_or_else(|| "FFmpeg was downloaded but does not run on this machine.".to_string())
 }
 
 /// Encoders of interest that this FFmpeg build reports.
@@ -267,8 +284,12 @@ pub fn run_with_progress(
     slot: &ChildSlot,
     mut on_progress: impl FnMut(Progress),
 ) -> Result<(), String> {
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).stdin(Stdio::null());
-    let mut child = cmd.spawn().map_err(|e| format!("Could not start ffmpeg: {e}"))?;
+    cmd.stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::null());
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Could not start ffmpeg: {e}"))?;
     let stdout = child.stdout.take().ok_or("no stdout")?;
     let stderr = child.stderr.take().ok_or("no stderr")?;
     *slot.lock().map_err(|_| "lock")? = Some(child);
@@ -313,7 +334,14 @@ pub fn run_with_progress(
     if status.success() {
         Ok(())
     } else {
-        let tail: Vec<&str> = stderr_text.lines().rev().take(12).collect::<Vec<_>>().into_iter().rev().collect();
+        let tail: Vec<&str> = stderr_text
+            .lines()
+            .rev()
+            .take(12)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
         Err(if tail.is_empty() {
             format!("ffmpeg exited with {status}")
         } else {
@@ -334,7 +362,14 @@ pub fn run_simple(mut cmd: Command) -> Result<Vec<u8>, String> {
         Ok(out.stdout)
     } else {
         let text = String::from_utf8_lossy(&out.stderr);
-        let tail: Vec<&str> = text.lines().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect();
+        let tail: Vec<&str> = text
+            .lines()
+            .rev()
+            .take(8)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
         Err(tail.join("\n"))
     }
 }

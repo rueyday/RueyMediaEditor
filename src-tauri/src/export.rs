@@ -105,7 +105,10 @@ fn color(c: &str) -> String {
 /// Piecewise-linear (optionally eased) keyframe expression in ffmpeg's
 /// expression language. `tvar` is the time variable (`t`, or `T` in geq).
 pub fn kf_expr(kfs: &[Keyframe], base: f64, tvar: &str) -> String {
-    let mut k: Vec<&Keyframe> = kfs.iter().filter(|k| k.t.is_finite() && k.v.is_finite()).collect();
+    let mut k: Vec<&Keyframe> = kfs
+        .iter()
+        .filter(|k| k.t.is_finite() && k.v.is_finite())
+        .collect();
     if k.is_empty() {
         return n(base);
     }
@@ -134,7 +137,10 @@ pub fn kf_expr(kfs: &[Keyframe], base: f64, tvar: &str) -> String {
 }
 
 fn has_kf(clip: &Clip, key: &str) -> bool {
-    clip.keyframes.get(key).map(|v| !v.is_empty()).unwrap_or(false)
+    clip.keyframes
+        .get(key)
+        .map(|v| !v.is_empty())
+        .unwrap_or(false)
 }
 
 fn prop_expr(clip: &Clip, key: &str, base: f64, tvar: &str) -> String {
@@ -172,16 +178,25 @@ pub fn effect_filters(e: &Effect) -> Vec<String> {
             }
             let exposure = e.num("exposure", 0.0);
             if exposure.abs() > 0.001 {
-                v.push(format!("exposure=exposure={}", n(exposure.clamp(-3.0, 3.0))));
+                v.push(format!(
+                    "exposure=exposure={}",
+                    n(exposure.clamp(-3.0, 3.0))
+                ));
             }
             let temp = e.num("temperature", 6500.0);
             if (temp - 6500.0).abs() > 1.0 {
-                v.push(format!("colortemperature=temperature={}", n(temp.clamp(1000.0, 40000.0))));
+                v.push(format!(
+                    "colortemperature=temperature={}",
+                    n(temp.clamp(1000.0, 40000.0))
+                ));
             }
             v
         }
         "blur" => vec![format!("gblur=sigma={}", n(e.num("radius", 4.0).max(0.0)))],
-        "sharpen" => vec![format!("unsharp=5:5:{}", n(e.num("amount", 1.0).clamp(-2.0, 5.0)))],
+        "sharpen" => vec![format!(
+            "unsharp=5:5:{}",
+            n(e.num("amount", 1.0).clamp(-2.0, 5.0))
+        )],
         "flip" => {
             let mut v = vec![];
             if e.flag("horizontal", true) {
@@ -193,9 +208,14 @@ pub fn effect_filters(e: &Effect) -> Vec<String> {
             v
         }
         "grayscale" => vec!["hue=s=0".into()],
-        "sepia" => vec!["colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131".into()],
+        "sepia" => {
+            vec!["colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131".into()]
+        }
         "invert" => vec!["negate".into()],
-        "vignette" => vec![format!("vignette=angle={}", n(e.num("angle", 0.6).clamp(0.0, 1.57)))],
+        "vignette" => vec![format!(
+            "vignette=angle={}",
+            n(e.num("angle", 0.6).clamp(0.0, 1.57))
+        )],
         "chromakey" => vec![format!(
             "colorkey=color={}:similarity={}:blend={}",
             color(&e.str("color", "#00ff00")),
@@ -210,7 +230,10 @@ pub fn effect_filters(e: &Effect) -> Vec<String> {
                 vec![format!("lut3d=file='{}'", esc_path(Path::new(&p)))]
             }
         }
-        "noise" => vec![format!("noise=alls={}:allf=t", n(e.num("strength", 20.0).clamp(0.0, 100.0)))],
+        "noise" => vec![format!(
+            "noise=alls={}:allf=t",
+            n(e.num("strength", 20.0).clamp(0.0, 100.0))
+        )],
         _ => vec![],
     }
 }
@@ -262,9 +285,19 @@ impl<'a> Builder<'a> {
     fn drawtext(&self, title: &Title) -> Result<String, String> {
         let file = self.work_dir.join(format!("title-{}.txt", self.counter));
         std::fs::write(&file, &title.text).map_err(|e| format!("Cannot write title text: {e}"))?;
-        let font: PathBuf = match title.font_file.as_ref().filter(|f| !f.is_empty() && Path::new(f).exists()) {
+        let font: PathBuf = match title
+            .font_file
+            .as_ref()
+            .filter(|f| !f.is_empty() && Path::new(f).exists())
+        {
             Some(f) => PathBuf::from(f),
-            None => if title.weight == "bold" { self.fonts.bold.clone() } else { self.fonts.regular.clone() },
+            None => {
+                if title.weight == "bold" {
+                    self.fonts.bold.clone()
+                } else {
+                    self.fonts.regular.clone()
+                }
+            }
         };
         let size = title.font_size.max(4.0);
         let x = match title.align.as_str() {
@@ -282,11 +315,19 @@ impl<'a> Builder<'a> {
         );
         if let Some(bg) = &title.background {
             if !bg.is_empty() {
-                f.push_str(&format!(":box=1:boxcolor={}:boxborderw={}", color(bg), n(title.padding.max(0.0))));
+                f.push_str(&format!(
+                    ":box=1:boxcolor={}:boxborderw={}",
+                    color(bg),
+                    n(title.padding.max(0.0))
+                ));
             }
         }
         if title.shadow {
-            f.push_str(&format!(":shadowcolor=black@0.6:shadowx={}:shadowy={}", n(size * 0.04), n(size * 0.04)));
+            f.push_str(&format!(
+                ":shadowcolor=black@0.6:shadowx={}:shadowy={}",
+                n(size * 0.04),
+                n(size * 0.04)
+            ));
         }
         Ok(f)
     }
@@ -299,7 +340,17 @@ impl<'a> Builder<'a> {
             "frames" => format!("%{{eif\\:n+{}\\:d}}", (offset * self.fps).round() as i64),
             _ => format!("%{{pts\\:hms\\:{}}}", n(offset)),
         };
-        let label = if tc.label.is_empty() { String::new() } else { format!("{} ", tc.label.replace('\\', "").replace(':', "\\:").replace('\'', "")) };
+        let label = if tc.label.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "{} ",
+                tc.label
+                    .replace('\\', "")
+                    .replace(':', "\\:")
+                    .replace('\'', "")
+            )
+        };
         let (x, y) = match tc.position.as_str() {
             "top-right" => (format!("w-text_w-{m}"), m.clone()),
             "top-center" => ("(w-text_w)/2".to_string(), m.clone()),
@@ -315,20 +366,43 @@ impl<'a> Builder<'a> {
             color(&tc.color)
         );
         if let Some(bg) = tc.background.as_ref().filter(|b| !b.is_empty()) {
-            f.push_str(&format!(":box=1:boxcolor={}:boxborderw={}", color(bg), n(size * 0.25)));
+            f.push_str(&format!(
+                ":box=1:boxcolor={}:boxborderw={}",
+                color(bg),
+                n(size * 0.25)
+            ));
         }
         f
     }
 
-    fn drawcaption(&self, cap: &Caption, style: &CaptionStyle, idx: usize) -> Result<String, String> {
+    fn drawcaption(
+        &self,
+        cap: &Caption,
+        style: &CaptionStyle,
+        idx: usize,
+    ) -> Result<String, String> {
         let file = self.work_dir.join(format!("caption-{idx}.txt"));
         std::fs::write(&file, &cap.text).map_err(|e| format!("Cannot write caption text: {e}"))?;
-        let font: PathBuf = match style.font_file.as_ref().filter(|f| !f.is_empty() && Path::new(f).exists()) {
+        let font: PathBuf = match style
+            .font_file
+            .as_ref()
+            .filter(|f| !f.is_empty() && Path::new(f).exists())
+        {
             Some(f) => PathBuf::from(f),
-            None => if style.weight == "regular" { self.fonts.regular.clone() } else { self.fonts.bold.clone() },
+            None => {
+                if style.weight == "regular" {
+                    self.fonts.regular.clone()
+                } else {
+                    self.fonts.bold.clone()
+                }
+            }
         };
         let size = style.font_size.max(4.0);
-        let y = if style.position == "top" { n(style.margin.max(0.0)) } else { format!("h-text_h-{}", n(style.margin.max(0.0))) };
+        let y = if style.position == "top" {
+            n(style.margin.max(0.0))
+        } else {
+            format!("h-text_h-{}", n(style.margin.max(0.0)))
+        };
         let mut f = format!(
             "drawtext=textfile='{}':fontfile='{}':fontsize={}:fontcolor={}:x=(w-text_w)/2:y={y}:line_spacing={}",
             esc_path(&file),
@@ -338,15 +412,30 @@ impl<'a> Builder<'a> {
             n(size * 0.2)
         );
         if let Some(bg) = style.background.as_ref().filter(|b| !b.is_empty()) {
-            f.push_str(&format!(":box=1:boxcolor={}:boxborderw={}", color(bg), n(size * 0.25)));
+            f.push_str(&format!(
+                ":box=1:boxcolor={}:boxborderw={}",
+                color(bg),
+                n(size * 0.25)
+            ));
         }
-        f.push_str(&format!(":enable='between(t,{},{})'", n(cap.start), n(cap.end)));
+        f.push_str(&format!(
+            ":enable='between(t,{},{})'",
+            n(cap.start),
+            n(cap.end)
+        ));
         Ok(f)
     }
 
     /// Builds a full-frame RGBA layer of exactly `len` seconds for a visual clip.
     /// `ext_out` is how much of that length is extra tail for an xfade.
-    fn layer(&mut self, clip: &Clip, len: f64, ext_out: f64, fade_in: Option<f64>, fade_out: Option<f64>) -> Result<(String, Option<usize>), String> {
+    fn layer(
+        &mut self,
+        clip: &Clip,
+        len: f64,
+        ext_out: f64,
+        fade_in: Option<f64>,
+        fade_out: Option<f64>,
+    ) -> Result<(String, Option<usize>), String> {
         let speed = if clip.speed > 0.0 { clip.speed } else { 1.0 };
         let (w, h, fps) = (self.w, self.h, self.fps);
         let mut chain: Vec<String> = Vec::new();
@@ -359,7 +448,10 @@ impl<'a> Builder<'a> {
             "video" | "image" | "audio" | "shape" => {
                 let is_still = clip.kind == "image" || clip.kind == "shape";
                 let path = if clip.kind == "shape" {
-                    clip.image_path.clone().filter(|p| !p.is_empty()).ok_or_else(|| format!("Shape clip {} has not been rendered", clip.id))?
+                    clip.image_path
+                        .clone()
+                        .filter(|p| !p.is_empty())
+                        .ok_or_else(|| format!("Shape clip {} has not been rendered", clip.id))?
                 } else {
                     clip.media_id
                         .as_ref()
@@ -370,22 +462,32 @@ impl<'a> Builder<'a> {
                 let src_len = len * speed;
                 let idx = if is_still {
                     self.add_input(vec![
-                        "-loop".into(), "1".into(),
-                        "-framerate".into(), n(fps),
-                        "-t".into(), n(len + 1.0),
-                        "-i".into(), path,
+                        "-loop".into(),
+                        "1".into(),
+                        "-framerate".into(),
+                        n(fps),
+                        "-t".into(),
+                        n(len + 1.0),
+                        "-i".into(),
+                        path,
                     ])
                 } else if clip.reverse {
                     self.add_input(vec![
-                        "-ss".into(), n(clip.in_.max(0.0)),
-                        "-t".into(), n((clip.out - clip.in_).max(0.04)),
-                        "-i".into(), path,
+                        "-ss".into(),
+                        n(clip.in_.max(0.0)),
+                        "-t".into(),
+                        n((clip.out - clip.in_).max(0.04)),
+                        "-i".into(),
+                        path,
                     ])
                 } else {
                     self.add_input(vec![
-                        "-ss".into(), n(clip.in_.max(0.0)),
-                        "-t".into(), n(src_len + 1.0),
-                        "-i".into(), path,
+                        "-ss".into(),
+                        n(clip.in_.max(0.0)),
+                        "-t".into(),
+                        n(src_len + 1.0),
+                        "-i".into(),
+                        path,
                     ])
                 };
                 input_idx = Some(idx);
@@ -394,7 +496,10 @@ impl<'a> Builder<'a> {
                     chain.push(format!("fps={}", n(fps)));
                     chain.push("setpts=PTS-STARTPTS".into());
                 } else if clip.reverse {
-                    chain.push(format!("trim=duration={}", n((clip.out - clip.in_).max(0.04))));
+                    chain.push(format!(
+                        "trim=duration={}",
+                        n((clip.out - clip.in_).max(0.04))
+                    ));
                     chain.push("reverse".into());
                     chain.push(format!("setpts=(PTS-STARTPTS)/{}", n(speed)));
                     chain.push(format!("fps={}", n(fps)));
@@ -408,16 +513,31 @@ impl<'a> Builder<'a> {
                     cyr = (1.0 - c.top - c.bottom).clamp(0.02, 1.0);
                     chain.push(format!(
                         "crop=w=iw*{}:h=ih*{}:x=iw*{}:y=ih*{}",
-                        n(cxr), n(cyr), n(c.left.clamp(0.0, 0.98)), n(c.top.clamp(0.0, 0.98))
+                        n(cxr),
+                        n(cyr),
+                        n(c.left.clamp(0.0, 0.98)),
+                        n(c.top.clamp(0.0, 0.98))
                     ));
                 }
             }
             "title" => {
                 let title = clip.title.clone().unwrap_or(Title {
-                    text: String::new(), font_size: 72.0, color: "#ffffff".into(), weight: String::new(),
-                    align: String::new(), background: None, padding: 0.0, shadow: false, line_height: 1.0, font_file: None,
+                    text: String::new(),
+                    font_size: 72.0,
+                    color: "#ffffff".into(),
+                    weight: String::new(),
+                    align: String::new(),
+                    background: None,
+                    padding: 0.0,
+                    shadow: false,
+                    line_height: 1.0,
+                    font_file: None,
                 });
-                src = format!("color=c=black@0.0:s={w}x{h}:r={}:d={},format=rgba", n(fps), n(len + 1.0));
+                src = format!(
+                    "color=c=black@0.0:s={w}x{h}:r={}:d={},format=rgba",
+                    n(fps),
+                    n(len + 1.0)
+                );
                 chain.push(self.drawtext(&title)?);
             }
             "color" => {
@@ -430,7 +550,11 @@ impl<'a> Builder<'a> {
             }
             "timecode" => {
                 let tc = clip.timecode.clone().unwrap_or_default();
-                src = format!("color=c=black@0.0:s={w}x{h}:r={}:d={},format=rgba", n(fps), n(len + 1.0));
+                src = format!(
+                    "color=c=black@0.0:s={w}x{h}:r={}:d={},format=rgba",
+                    n(fps),
+                    n(len + 1.0)
+                );
                 chain.push(self.drawtimecode(&tc, clip.start));
             }
             other => return Err(format!("Unknown clip kind {other}")),
@@ -465,9 +589,14 @@ impl<'a> Builder<'a> {
 
         if has_kf(clip, "opacity") {
             let o = prop_expr(clip, "opacity", clip.transform.opacity, "T");
-            chain.push(format!("geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='alpha(X,Y)*clip({o},0,1)'"));
+            chain.push(format!(
+                "geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='alpha(X,Y)*clip({o},0,1)'"
+            ));
         } else if clip.transform.opacity < 0.999 {
-            chain.push(format!("colorchannelmixer=aa={}", n(clip.transform.opacity.clamp(0.0, 1.0))));
+            chain.push(format!(
+                "colorchannelmixer=aa={}",
+                n(clip.transform.opacity.clamp(0.0, 1.0))
+            ));
         }
 
         if let Some(d) = fade_in {
@@ -475,7 +604,11 @@ impl<'a> Builder<'a> {
         }
         if let Some(d) = fade_out {
             let base_len = len - ext_out;
-            chain.push(format!("fade=t=out:st={}:d={}:alpha=1", n((base_len - d).max(0.0)), n(d)));
+            chain.push(format!(
+                "fade=t=out:st={}:d={}:alpha=1",
+                n((base_len - d).max(0.0)),
+                n(d)
+            ));
         }
 
         chain.push("tpad=stop_mode=clone:stop_duration=3".into());
@@ -484,7 +617,8 @@ impl<'a> Builder<'a> {
 
         let layer = self.label("lay");
         let sep = if src.starts_with('[') { "" } else { "," };
-        self.filters.push(format!("{src}{sep}{}[{layer}]", chain.join(",")));
+        self.filters
+            .push(format!("{src}{sep}{}[{layer}]", chain.join(",")));
 
         // Place onto a transparent full frame at the (possibly keyframed) position.
         let canvas = self.transparent(len);
@@ -497,7 +631,15 @@ impl<'a> Builder<'a> {
         Ok((out, input_idx))
     }
 
-    fn audio(&mut self, clip: &Clip, media: &Media, input_idx: Option<usize>, len: f64, fade_in: f64, fade_out: f64) {
+    fn audio(
+        &mut self,
+        clip: &Clip,
+        media: &Media,
+        input_idx: Option<usize>,
+        len: f64,
+        fade_in: f64,
+        fade_out: f64,
+    ) {
         if !self.audio_enabled {
             return;
         }
@@ -505,10 +647,17 @@ impl<'a> Builder<'a> {
         let idx = match input_idx {
             Some(i) => i,
             None => self.add_input(vec![
-                "-ss".into(), n(clip.in_.max(0.0)),
-                "-t".into(), n(if clip.reverse { (clip.out - clip.in_).max(0.04) } else { len * speed + 1.0 }),
+                "-ss".into(),
+                n(clip.in_.max(0.0)),
+                "-t".into(),
+                n(if clip.reverse {
+                    (clip.out - clip.in_).max(0.04)
+                } else {
+                    len * speed + 1.0
+                }),
                 "-vn".into(),
-                "-i".into(), media.path.clone(),
+                "-i".into(),
+                media.path.clone(),
             ]),
         };
         let sr = self.project.settings.sample_rate.max(8000);
@@ -517,7 +666,10 @@ impl<'a> Builder<'a> {
             "asetpts=PTS-STARTPTS".to_string(),
         ];
         if clip.reverse {
-            chain.push(format!("atrim=duration={}", n((clip.out - clip.in_).max(0.04))));
+            chain.push(format!(
+                "atrim=duration={}",
+                n((clip.out - clip.in_).max(0.04))
+            ));
             chain.push("areverse".into());
         }
         let mut s = speed;
@@ -543,21 +695,35 @@ impl<'a> Builder<'a> {
             chain.push(format!("afade=t=in:st=0:d={}", n(fade_in.min(len))));
         }
         if fade_out > 0.0 {
-            chain.push(format!("afade=t=out:st={}:d={}", n((len - fade_out).max(0.0)), n(fade_out.min(len))));
+            chain.push(format!(
+                "afade=t=out:st={}:d={}",
+                n((len - fade_out).max(0.0)),
+                n(fade_out.min(len))
+            ));
         }
         let delay_ms = (clip.start.max(0.0) * 1000.0).round() as i64;
         if delay_ms > 0 {
             chain.push(format!("adelay={delay_ms}:all=1"));
         }
         let l = self.label("aud");
-        self.filters.push(format!("[{idx}:a]{}[{l}]", chain.join(",")));
+        self.filters
+            .push(format!("[{idx}:a]{}[{l}]", chain.join(",")));
         self.audio_labels.push(l);
     }
 
     /// One continuous full-frame stream for a video track, `total` seconds long.
-    fn track_stream(&mut self, track: &Track, total: f64, audible: bool) -> Result<Option<String>, String> {
+    fn track_stream(
+        &mut self,
+        track: &Track,
+        total: f64,
+        audible: bool,
+    ) -> Result<Option<String>, String> {
         let mut clips: Vec<&Clip> = track.clips.iter().filter(|c| c.duration() > 1e-4).collect();
-        clips.sort_by(|a, b| a.start.partial_cmp(&b.start).unwrap_or(std::cmp::Ordering::Equal));
+        clips.sort_by(|a, b| {
+            a.start
+                .partial_cmp(&b.start)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Effective transition length between adjacent clips i-1 and i.
         let mut pair_d: Vec<f64> = vec![0.0; clips.len()];
@@ -565,7 +731,11 @@ impl<'a> Builder<'a> {
             let (a, b) = (clips[i - 1], clips[i]);
             if let Some(tr) = &b.transition_in {
                 if (b.start - a.end()).abs() < 0.002 && tr.duration > 0.0 {
-                    pair_d[i] = tr.duration.min(a.duration()).min(b.duration()).max(2.0 / self.fps);
+                    pair_d[i] = tr
+                        .duration
+                        .min(a.duration())
+                        .min(b.duration())
+                        .max(2.0 / self.fps);
                 }
             }
         }
@@ -580,15 +750,27 @@ impl<'a> Builder<'a> {
             }
             if render_video && start > cursor + 0.001 {
                 let l = self.transparent(start - cursor);
-                segs.push(Seg { label: l, len: start - cursor, xfade: None });
+                segs.push(Seg {
+                    label: l,
+                    len: start - cursor,
+                    xfade: None,
+                });
             }
             let d_in = pair_d[i];
             let d_out = pair_d.get(i + 1).copied().unwrap_or(0.0);
             let base_len = clip.end() - start;
             let len = base_len + d_out;
 
-            let standalone_in = clip.transition_in.as_ref().filter(|t| d_in <= 0.0 && t.duration > 0.0).map(|t| t.duration.min(base_len));
-            let standalone_out = clip.transition_out.as_ref().filter(|t| d_out <= 0.0 && t.duration > 0.0).map(|t| t.duration.min(base_len));
+            let standalone_in = clip
+                .transition_in
+                .as_ref()
+                .filter(|t| d_in <= 0.0 && t.duration > 0.0)
+                .map(|t| t.duration.min(base_len));
+            let standalone_out = clip
+                .transition_out
+                .as_ref()
+                .filter(|t| d_out <= 0.0 && t.duration > 0.0)
+                .map(|t| t.duration.min(base_len));
 
             let no_video = !render_video;
             let (label, input_idx) = if no_video {
@@ -599,19 +781,41 @@ impl<'a> Builder<'a> {
 
             // Audio that belongs to this visual clip.
             if audible && clip.kind == "video" && !clip.muted && !clip.audio_detached {
-                if let Some(media) = clip.media_id.as_ref().and_then(|id| self.project.media.get(id)) {
+                if let Some(media) = clip
+                    .media_id
+                    .as_ref()
+                    .and_then(|id| self.project.media.get(id))
+                {
                     if media.has_audio {
-                        let fi = if d_in > 0.0 { d_in } else { clip.fade_in.max(standalone_in.unwrap_or(0.0)) };
-                        let fo = if d_out > 0.0 { d_out } else { clip.fade_out.max(standalone_out.unwrap_or(0.0)) };
+                        let fi = if d_in > 0.0 {
+                            d_in
+                        } else {
+                            clip.fade_in.max(standalone_in.unwrap_or(0.0))
+                        };
+                        let fo = if d_out > 0.0 {
+                            d_out
+                        } else {
+                            clip.fade_out.max(standalone_out.unwrap_or(0.0))
+                        };
                         let m = media.clone();
-                        self.audio(clip, &m, if no_video { None } else { input_idx }, len, fi, fo);
+                        self.audio(
+                            clip,
+                            &m,
+                            if no_video { None } else { input_idx },
+                            len,
+                            fi,
+                            fo,
+                        );
                     }
                 }
             }
 
             if !no_video {
                 let xfade = if d_in > 0.0 {
-                    Some((xfade_name(&clip.transition_in.as_ref().unwrap().kind).to_string(), d_in))
+                    Some((
+                        xfade_name(&clip.transition_in.as_ref().unwrap().kind).to_string(),
+                        d_in,
+                    ))
                 } else {
                     None
                 };
@@ -624,7 +828,11 @@ impl<'a> Builder<'a> {
         }
         if cursor < total - 0.001 {
             let l = self.transparent(total - cursor);
-            segs.push(Seg { label: l, len: total - cursor, xfade: None });
+            segs.push(Seg {
+                label: l,
+                len: total - cursor,
+                xfade: None,
+            });
         }
         if segs.is_empty() {
             return Ok(None);
@@ -645,7 +853,8 @@ impl<'a> Builder<'a> {
                     cur_len = cur_len + seg.len - d;
                 }
                 None => {
-                    self.filters.push(format!("[{cur}][{}]concat=n=2:v=1:a=0[{out}]", seg.label));
+                    self.filters
+                        .push(format!("[{cur}][{}]concat=n=2:v=1:a=0[{out}]", seg.label));
                     cur_len += seg.len;
                 }
             }
@@ -660,7 +869,11 @@ impl<'a> Builder<'a> {
             if clip.muted || clip.duration() <= 1e-4 {
                 continue;
             }
-            if let Some(media) = clip.media_id.as_ref().and_then(|id| self.project.media.get(id)) {
+            if let Some(media) = clip
+                .media_id
+                .as_ref()
+                .and_then(|id| self.project.media.get(id))
+            {
                 if media.has_audio {
                     let m = media.clone();
                     self.audio(clip, &m, None, clip.duration(), clip.fade_in, clip.fade_out);
@@ -674,54 +887,209 @@ fn quality_to_kbps(q: u32, w: u32, h: u32, fps: f64) -> u32 {
     // bits per pixel per frame: ~0.30 at q=0 down to ~0.03 at q=51
     let t = (q.min(51) as f64) / 51.0;
     let bpp = 0.30 * (1.0 - t) + 0.03 * t;
-    ((w as f64 * h as f64 * fps.max(1.0) * bpp) / 1000.0).round().max(300.0) as u32
+    ((w as f64 * h as f64 * fps.max(1.0) * bpp) / 1000.0)
+        .round()
+        .max(300.0) as u32
 }
 
 fn video_codec_args(s: &ExportSettings, w: u32, h: u32, fps: f64) -> Vec<String> {
     let q = s.quality.min(51);
     let mut a: Vec<String> = Vec::new();
-    let bitrate = if s.bitrate_kbps > 0 { s.bitrate_kbps } else { quality_to_kbps(q, w, h, fps) };
+    let bitrate = if s.bitrate_kbps > 0 {
+        s.bitrate_kbps
+    } else {
+        quality_to_kbps(q, w, h, fps)
+    };
     let push = |a: &mut Vec<String>, items: &[&str]| a.extend(items.iter().map(|s| s.to_string()));
     match s.video_codec.as_str() {
         "libx264" => {
-            push(&mut a, &["-c:v", "libx264", "-preset", &s.preset, "-pix_fmt", "yuv420p", "-profile:v", "high"]);
-            if s.bitrate_kbps > 0 { push(&mut a, &["-b:v", &format!("{bitrate}k")]); } else { push(&mut a, &["-crf", &q.to_string()]); }
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    &s.preset,
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-profile:v",
+                    "high",
+                ],
+            );
+            if s.bitrate_kbps > 0 {
+                push(&mut a, &["-b:v", &format!("{bitrate}k")]);
+            } else {
+                push(&mut a, &["-crf", &q.to_string()]);
+            }
             push(&mut a, &["-movflags", "+faststart"]);
         }
         "libx265" => {
-            push(&mut a, &["-c:v", "libx265", "-preset", &s.preset, "-pix_fmt", "yuv420p", "-tag:v", "hvc1"]);
-            if s.bitrate_kbps > 0 { push(&mut a, &["-b:v", &format!("{bitrate}k")]); } else { push(&mut a, &["-crf", &q.to_string()]); }
+            push(
+                &mut a,
+                &[
+                    "-c:v", "libx265", "-preset", &s.preset, "-pix_fmt", "yuv420p", "-tag:v",
+                    "hvc1",
+                ],
+            );
+            if s.bitrate_kbps > 0 {
+                push(&mut a, &["-b:v", &format!("{bitrate}k")]);
+            } else {
+                push(&mut a, &["-crf", &q.to_string()]);
+            }
             push(&mut a, &["-movflags", "+faststart"]);
         }
         "h264_videotoolbox" | "hevc_videotoolbox" => {
-            push(&mut a, &["-c:v", &s.video_codec, "-b:v", &format!("{bitrate}k"), "-pix_fmt", "yuv420p", "-movflags", "+faststart"]);
-            if s.video_codec == "hevc_videotoolbox" { push(&mut a, &["-tag:v", "hvc1"]); }
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    &s.video_codec,
+                    "-b:v",
+                    &format!("{bitrate}k"),
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-movflags",
+                    "+faststart",
+                ],
+            );
+            if s.video_codec == "hevc_videotoolbox" {
+                push(&mut a, &["-tag:v", "hvc1"]);
+            }
         }
         "h264_nvenc" | "hevc_nvenc" => {
-            push(&mut a, &["-c:v", &s.video_codec, "-preset", "p5", "-rc", "vbr", "-cq", &q.to_string(), "-b:v", "0", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]);
-            if s.video_codec == "hevc_nvenc" { push(&mut a, &["-tag:v", "hvc1"]); }
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    &s.video_codec,
+                    "-preset",
+                    "p5",
+                    "-rc",
+                    "vbr",
+                    "-cq",
+                    &q.to_string(),
+                    "-b:v",
+                    "0",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-movflags",
+                    "+faststart",
+                ],
+            );
+            if s.video_codec == "hevc_nvenc" {
+                push(&mut a, &["-tag:v", "hvc1"]);
+            }
         }
         "h264_qsv" | "hevc_qsv" => {
-            push(&mut a, &["-c:v", &s.video_codec, "-global_quality", &q.max(1).to_string(), "-pix_fmt", "nv12", "-movflags", "+faststart"]);
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    &s.video_codec,
+                    "-global_quality",
+                    &q.max(1).to_string(),
+                    "-pix_fmt",
+                    "nv12",
+                    "-movflags",
+                    "+faststart",
+                ],
+            );
         }
         "h264_amf" | "hevc_amf" => {
-            push(&mut a, &["-c:v", &s.video_codec, "-rc", "cqp", "-qp_i", &q.to_string(), "-qp_p", &q.to_string(), "-pix_fmt", "yuv420p", "-movflags", "+faststart"]);
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    &s.video_codec,
+                    "-rc",
+                    "cqp",
+                    "-qp_i",
+                    &q.to_string(),
+                    "-qp_p",
+                    &q.to_string(),
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-movflags",
+                    "+faststart",
+                ],
+            );
         }
         "h264_vaapi" | "hevc_vaapi" => {
-            push(&mut a, &["-c:v", &s.video_codec, "-b:v", &format!("{bitrate}k")]);
+            push(
+                &mut a,
+                &["-c:v", &s.video_codec, "-b:v", &format!("{bitrate}k")],
+            );
         }
         "libvpx-vp9" => {
-            push(&mut a, &["-c:v", "libvpx-vp9", "-pix_fmt", "yuv420p", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2"]);
-            if s.bitrate_kbps > 0 { push(&mut a, &["-b:v", &format!("{bitrate}k")]); } else { push(&mut a, &["-crf", &q.to_string(), "-b:v", "0"]); }
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    "libvpx-vp9",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-row-mt",
+                    "1",
+                    "-deadline",
+                    "good",
+                    "-cpu-used",
+                    "2",
+                ],
+            );
+            if s.bitrate_kbps > 0 {
+                push(&mut a, &["-b:v", &format!("{bitrate}k")]);
+            } else {
+                push(&mut a, &["-crf", &q.to_string(), "-b:v", "0"]);
+            }
         }
         "libaom-av1" => {
-            push(&mut a, &["-c:v", "libaom-av1", "-pix_fmt", "yuv420p", "-crf", &q.to_string(), "-b:v", "0", "-cpu-used", "6", "-row-mt", "1"]);
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    "libaom-av1",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-crf",
+                    &q.to_string(),
+                    "-b:v",
+                    "0",
+                    "-cpu-used",
+                    "6",
+                    "-row-mt",
+                    "1",
+                ],
+            );
         }
         "libsvtav1" => {
-            push(&mut a, &["-c:v", "libsvtav1", "-pix_fmt", "yuv420p", "-crf", &q.to_string(), "-preset", "8"]);
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    "libsvtav1",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-crf",
+                    &q.to_string(),
+                    "-preset",
+                    "8",
+                ],
+            );
         }
         "prores_ks" => {
-            push(&mut a, &["-c:v", "prores_ks", "-profile:v", "3", "-vendor", "apl0", "-pix_fmt", "yuv422p10le"]);
+            push(
+                &mut a,
+                &[
+                    "-c:v",
+                    "prores_ks",
+                    "-profile:v",
+                    "3",
+                    "-vendor",
+                    "apl0",
+                    "-pix_fmt",
+                    "yuv422p10le",
+                ],
+            );
         }
         "gif" => {}
         "none" => push(&mut a, &["-vn"]),
@@ -747,11 +1115,28 @@ fn audio_codec_args(s: &ExportSettings) -> Vec<String> {
 }
 
 /// Build the complete ffmpeg argument list for exporting `project`.
-pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, fonts: &Fonts) -> Result<Built, String> {
+pub fn build(
+    project: &Project,
+    settings: &ExportSettings,
+    work_dir: &Path,
+    fonts: &Fonts,
+) -> Result<Built, String> {
     let ps = &project.settings;
-    let w = if settings.width > 0 { settings.width } else { ps.width } & !1;
-    let h = if settings.height > 0 { settings.height } else { ps.height } & !1;
-    let fps = if settings.fps > 0.0 { settings.fps } else { ps.fps };
+    let w = if settings.width > 0 {
+        settings.width
+    } else {
+        ps.width
+    } & !1;
+    let h = if settings.height > 0 {
+        settings.height
+    } else {
+        ps.height
+    } & !1;
+    let fps = if settings.fps > 0.0 {
+        settings.fps
+    } else {
+        ps.fps
+    };
     if w < 2 || h < 2 || fps <= 0.0 {
         return Err("Invalid output size or frame rate".into());
     }
@@ -807,11 +1192,16 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
         let mut base = b.label("base");
         b.filters.push(format!(
             "color=c=black:s={}x{}:r={}:d={},format=rgba[{base}]",
-            b.w, b.h, n(fps), n(total)
+            b.w,
+            b.h,
+            n(fps),
+            n(total)
         ));
         for tl in &track_labels {
             let out = b.label("base");
-            b.filters.push(format!("[{base}][{tl}]overlay=format=auto:eof_action=pass[{out}]"));
+            b.filters.push(format!(
+                "[{base}][{tl}]overlay=format=auto:eof_action=pass[{out}]"
+            ));
             base = out;
         }
 
@@ -823,7 +1213,11 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
             }
         }
         if let Some((a, bnd)) = settings.range {
-            vchain.push(format!("trim=start={}:end={},setpts=PTS-STARTPTS", n(a.max(0.0)), n(bnd.min(total))));
+            vchain.push(format!(
+                "trim=start={}:end={},setpts=PTS-STARTPTS",
+                n(a.max(0.0)),
+                n(bnd.min(total))
+            ));
         }
         if w != b.w || h != b.h {
             vchain.push(format!("scale={w}:{h}:flags=lanczos"));
@@ -833,7 +1227,8 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
             "prores_ks" => vchain.push("format=yuv422p10le".into()),
             _ => vchain.push("format=yuv420p".into()),
         }
-        b.filters.push(format!("[{base}]{}[vout]", vchain.join(",")));
+        b.filters
+            .push(format!("[{base}]{}[vout]", vchain.join(",")));
         vout = "vout".to_string();
     }
 
@@ -851,11 +1246,19 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
             ));
             "amix".to_string()
         };
-        let mut achain = vec![format!("apad=whole_dur={}", n(total)), format!("atrim=duration={}", n(total))];
+        let mut achain = vec![
+            format!("apad=whole_dur={}", n(total)),
+            format!("atrim=duration={}", n(total)),
+        ];
         if let Some((a, bnd)) = settings.range {
-            achain.push(format!("atrim=start={}:end={},asetpts=PTS-STARTPTS", n(a.max(0.0)), n(bnd.min(total))));
+            achain.push(format!(
+                "atrim=start={}:end={},asetpts=PTS-STARTPTS",
+                n(a.max(0.0)),
+                n(bnd.min(total))
+            ));
         }
-        b.filters.push(format!("[{mixed}]{}[aout]", achain.join(",")));
+        b.filters
+            .push(format!("[{mixed}]{}[aout]", achain.join(",")));
         Some("aout".to_string())
     } else {
         None
@@ -866,8 +1269,13 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
     std::fs::write(&graph_file, &graph).map_err(|e| format!("Cannot write filter graph: {e}"))?;
 
     let mut args: Vec<String> = vec![
-        "-hide_banner".into(), "-y".into(), "-loglevel".into(), "error".into(),
-        "-progress".into(), "pipe:1".into(), "-nostats".into(),
+        "-hide_banner".into(),
+        "-y".into(),
+        "-loglevel".into(),
+        "error".into(),
+        "-progress".into(),
+        "pipe:1".into(),
+        "-nostats".into(),
     ];
     for inp in &b.inputs {
         args.extend(inp.iter().cloned());
@@ -894,7 +1302,11 @@ pub fn build(project: &Project, settings: &ExportSettings, work_dir: &Path, font
     }
     args.push(settings.output.clone());
 
-    Ok(Built { args, duration: out_dur, graph })
+    Ok(Built {
+        args,
+        duration: out_dur,
+        graph,
+    })
 }
 
 /// A project containing only what is visible at `t`, shifted so `t` is at 0.
@@ -945,7 +1357,14 @@ pub fn single_frame_project(project: &Project, t: f64) -> Project {
 }
 
 /// ffmpeg arguments that render the frame at `t` to `out_png` at `width` pixels wide.
-pub fn build_frame(project: &Project, t: f64, width: u32, out_png: &Path, work_dir: &Path, fonts: &Fonts) -> Result<Vec<String>, String> {
+pub fn build_frame(
+    project: &Project,
+    t: f64,
+    width: u32,
+    out_png: &Path,
+    work_dir: &Path,
+    fonts: &Fonts,
+) -> Result<Vec<String>, String> {
     let p = single_frame_project(project, t);
     if p.duration() <= 0.0 {
         return Err("empty".into());
@@ -982,7 +1401,15 @@ pub fn build_frame(project: &Project, t: f64, width: u32, out_png: &Path, work_d
         args.push(a.clone());
     }
     let out = args.pop().unwrap_or_default();
-    args.extend(["-frames:v".into(), "1".into(), "-update".into(), "1".into(), "-pix_fmt".into(), "rgb24".into(), out]);
+    args.extend([
+        "-frames:v".into(),
+        "1".into(),
+        "-update".into(),
+        "1".into(),
+        "-pix_fmt".into(),
+        "rgb24".into(),
+        out,
+    ]);
     Ok(args)
 }
 
@@ -1039,12 +1466,26 @@ mod tests {
     }
 
     fn fonts() -> Fonts {
-        Fonts { regular: PathBuf::from("/tmp/Inter-Regular.ttf"), bold: PathBuf::from("/tmp/Inter-Bold.ttf") }
+        Fonts {
+            regular: PathBuf::from("/tmp/Inter-Regular.ttf"),
+            bold: PathBuf::from("/tmp/Inter-Bold.ttf"),
+        }
     }
 
     #[test]
     fn keyframe_expression_is_piecewise_linear() {
-        let kfs = vec![Keyframe { t: 0.0, v: 0.0, ease: String::new() }, Keyframe { t: 2.0, v: 100.0, ease: String::new() }];
+        let kfs = vec![
+            Keyframe {
+                t: 0.0,
+                v: 0.0,
+                ease: String::new(),
+            },
+            Keyframe {
+                t: 2.0,
+                v: 100.0,
+                ease: String::new(),
+            },
+        ];
         let e = kf_expr(&kfs, 5.0, "t");
         assert!(e.contains("if(lt(t,0),0,"), "{e}");
         assert!(e.contains("if(lt(t,2),0+(100)*((t-0)/2),100)"), "{e}");
@@ -1056,37 +1497,119 @@ mod tests {
         let mut p = Project {
             version: 1,
             name: "t".into(),
-            settings: Settings { width: 640, height: 360, fps: 30.0, sample_rate: 48000 },
+            settings: Settings {
+                width: 640,
+                height: 360,
+                fps: 30.0,
+                sample_rate: 48000,
+            },
             media: HashMap::new(),
             tracks: vec![],
             markers: vec![],
             captions: vec![],
             caption_style: Default::default(),
         };
-        p.media.extend([media("a", 10.0, true), media("b", 10.0, true)]);
+        p.media
+            .extend([media("a", 10.0, true), media("b", 10.0, true)]);
         let mut c2 = clip("c2", "b", 3.0, 1.0, 5.0);
-        c2.transition_in = Some(Transition { kind: "wipeleft".into(), duration: 1.0 });
-        c2.keyframes.insert("x".into(), vec![Keyframe { t: 0.0, v: -100.0, ease: String::new() }, Keyframe { t: 1.0, v: 100.0, ease: "ease".into() }]);
-        c2.effects.push(Effect { kind: "color".into(), params: HashMap::from([("saturation".to_string(), serde_json::json!(1.5))]), enabled: true });
+        c2.transition_in = Some(Transition {
+            kind: "wipeleft".into(),
+            duration: 1.0,
+        });
+        c2.keyframes.insert(
+            "x".into(),
+            vec![
+                Keyframe {
+                    t: 0.0,
+                    v: -100.0,
+                    ease: String::new(),
+                },
+                Keyframe {
+                    t: 1.0,
+                    v: 100.0,
+                    ease: "ease".into(),
+                },
+            ],
+        );
+        c2.effects.push(Effect {
+            kind: "color".into(),
+            params: HashMap::from([("saturation".to_string(), serde_json::json!(1.5))]),
+            enabled: true,
+        });
         let title = Clip {
             kind: "title".into(),
             media_id: None,
-            title: Some(Title { text: "Hello".into(), font_size: 60.0, color: "#ff0000".into(), weight: "bold".into(), align: "center".into(), background: Some("#00000080".into()), padding: 10.0, shadow: true, line_height: 1.2, font_file: None }),
+            title: Some(Title {
+                text: "Hello".into(),
+                font_size: 60.0,
+                color: "#ff0000".into(),
+                weight: "bold".into(),
+                align: "center".into(),
+                background: Some("#00000080".into()),
+                padding: 10.0,
+                shadow: true,
+                line_height: 1.2,
+                font_file: None,
+            }),
             ..clip("t1", "a", 1.0, 0.0, 2.0)
         };
         p.tracks = vec![
-            Track { id: "v2".into(), kind: "video".into(), name: "V2".into(), clips: vec![title], ..Default::default() },
-            Track { id: "v1".into(), kind: "video".into(), name: "V1".into(), clips: vec![clip("c1", "a", 0.0, 0.0, 3.0), c2], ..Default::default() },
+            Track {
+                id: "v2".into(),
+                kind: "video".into(),
+                name: "V2".into(),
+                clips: vec![title],
+                ..Default::default()
+            },
+            Track {
+                id: "v1".into(),
+                kind: "video".into(),
+                name: "V1".into(),
+                clips: vec![clip("c1", "a", 0.0, 0.0, 3.0), c2],
+                ..Default::default()
+            },
         ];
         let dir = std::env::temp_dir().join("rve-test-graph");
         std::fs::create_dir_all(&dir).unwrap();
-        let s = ExportSettings { output: "/tmp/out.mp4".into(), width: 0, height: 0, fps: 0.0, video_codec: "libx264".into(), quality: 20, bitrate_kbps: 0, preset: "fast".into(), audio_codec: "aac".into(), audio_bitrate_kbps: 192, range: None };
+        let s = ExportSettings {
+            output: "/tmp/out.mp4".into(),
+            width: 0,
+            height: 0,
+            fps: 0.0,
+            video_codec: "libx264".into(),
+            quality: 20,
+            bitrate_kbps: 0,
+            preset: "fast".into(),
+            audio_codec: "aac".into(),
+            audio_bitrate_kbps: 192,
+            range: None,
+        };
         let built = build(&p, &s, &dir, &fonts()).unwrap();
         assert!((built.duration - 7.0).abs() < 1e-6);
-        assert!(built.graph.contains("xfade=transition=wipeleft:duration=1:offset=3"), "{}", built.graph);
-        assert!(built.graph.contains("drawtext=textfile="), "{}", built.graph);
-        assert!(built.graph.contains("fontfile='/tmp/Inter-Bold.ttf'"), "{}", built.graph);
-        assert!(built.graph.contains("eq=brightness=0:contrast=1:saturation=1.5:gamma=1"), "{}", built.graph);
+        assert!(
+            built
+                .graph
+                .contains("xfade=transition=wipeleft:duration=1:offset=3"),
+            "{}",
+            built.graph
+        );
+        assert!(
+            built.graph.contains("drawtext=textfile="),
+            "{}",
+            built.graph
+        );
+        assert!(
+            built.graph.contains("fontfile='/tmp/Inter-Bold.ttf'"),
+            "{}",
+            built.graph
+        );
+        assert!(
+            built
+                .graph
+                .contains("eq=brightness=0:contrast=1:saturation=1.5:gamma=1"),
+            "{}",
+            built.graph
+        );
         assert!(built.graph.contains("amix=inputs=2"), "{}", built.graph);
         assert!(built.graph.contains("adelay=3000:all=1"), "{}", built.graph);
         assert!(built.args.iter().any(|a| a == "libx264"));
@@ -1097,12 +1620,33 @@ mod tests {
 
     #[test]
     fn single_frame_project_shifts_time() {
-        let mut p = Project { version: 1, name: String::new(), settings: Settings::default(), media: HashMap::new(), tracks: vec![], markers: vec![], captions: vec![], caption_style: Default::default() };
+        let mut p = Project {
+            version: 1,
+            name: String::new(),
+            settings: Settings::default(),
+            media: HashMap::new(),
+            tracks: vec![],
+            markers: vec![],
+            captions: vec![],
+            caption_style: Default::default(),
+        };
         p.media.extend([media("a", 10.0, false)]);
         let mut c = clip("c", "a", 2.0, 1.0, 6.0);
         c.speed = 2.0;
-        c.keyframes.insert("x".into(), vec![Keyframe { t: 1.0, v: 5.0, ease: String::new() }]);
-        p.tracks = vec![Track { id: "v1".into(), kind: "video".into(), clips: vec![c], ..Default::default() }];
+        c.keyframes.insert(
+            "x".into(),
+            vec![Keyframe {
+                t: 1.0,
+                v: 5.0,
+                ease: String::new(),
+            }],
+        );
+        p.tracks = vec![Track {
+            id: "v1".into(),
+            kind: "video".into(),
+            clips: vec![c],
+            ..Default::default()
+        }];
         let f = single_frame_project(&p, 3.0);
         let c = &f.tracks[0].clips[0];
         assert_eq!(c.start, 0.0);

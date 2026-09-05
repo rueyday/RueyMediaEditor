@@ -144,7 +144,7 @@
       <div class="reveal">
         <div class="kicker">Build &amp; run</div>
         <h2>Three steps. No download page.</h2>
-        <p class="sub">Requires <a href="https://rustup.rs">Rust</a> and the <a href="https://tauri.app/start/prerequisites/">Tauri prerequisites</a> for your platform. FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
+        <p class="sub">Everything the build needs is in the commands below: Rust, the platform toolchain, and Tauri's system libraries. FFmpeg is picked up from your PATH, or the app downloads a static build on first launch. Works on macOS (Intel and Apple silicon), Windows 10/11, and Linux.</p>
       </div>
       <div class="terminal reveal">
         <div class="bar"><i></i><i></i><i></i><div class="tabs" role="tablist"><button class="tab active" data-os="mac">macOS</button><button class="tab" data-os="win">Windows</button><button class="tab" data-os="linux">Linux</button></div></div>
@@ -216,9 +216,9 @@
 
     // Terminal typewriter
     const CMDS = {
-      mac: [['# 1. Toolchain'], ['curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'], ['xcode-select --install'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  src-tauri/target/release/bundle/)'], ['cargo tauri dev']],
-      win: [['# 1. Toolchain (PowerShell). Also install "Desktop development with C++"'], ['#    from Visual Studio Build Tools, and the WebView2 runtime if missing.'], ['winget install Rustlang.Rustup'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  src-tauri\\target\\release\\bundle\\)'], ['cargo tauri dev']],
-      linux: [['# 1. Toolchain + libraries (Debian / Ubuntu shown)'], ['curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'], ['sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \\'], ['  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev ffmpeg'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  AppImage / .deb)'], ['cargo tauri dev']],
+      mac: [['# 1. Toolchain'], ['xcode-select --install'], ["curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  .app / .dmg in src-tauri/target/release/bundle/)'], ['cargo tauri dev']],
+      win: [['# 1. Toolchain (PowerShell). Rust needs the C++ build tools; WebView2 ships with Windows 10/11.'], ['winget install Rustlang.Rustup Git.Git Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  src-tauri\\target\\release\\bundle\\ for an installer)'], ['cargo tauri dev']],
+      linux: [['# 1. Toolchain + libraries (Debian / Ubuntu shown; README has Fedora / Arch)'], ["curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"], ['sudo apt install build-essential curl wget file git pkg-config libssl-dev \\'], ['  libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev librsvg2-dev \\'], ['  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav ffmpeg'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  AppImage / .deb / .rpm)'], ['cargo tauri dev']],
     };
     const term = document.getElementById('term');
     let os = /Windows/.test(navigator.userAgent) ? 'win' : /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent) ? 'linux' : 'mac';

@@ -98,12 +98,6 @@ export function endEdit(token) {
   openEdit = null;
   bus.emit('project', { label: token.label });
 }
-export function cancelEdit(token) {
-  if (!openEdit || token !== openEdit) return;
-  state.project = JSON.parse(openEdit.before);
-  openEdit = null;
-  bus.emit('project', { label: 'cancel' });
-}
 
 export function undo() {
   const step = history.pop();

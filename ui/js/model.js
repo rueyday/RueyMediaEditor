@@ -153,12 +153,6 @@ export function findClip(p, id) {
   return null;
 }
 
-export function clipsAt(p, t) {
-  const out = [];
-  for (const track of p.tracks) for (const c of track.clips) if (c.start <= t && t < clipEnd(c)) out.push({ clip: c, track });
-  return out;
-}
-
 export function sortedClips(track) {
   return [...track.clips].sort((a, b) => a.start - b.start);
 }

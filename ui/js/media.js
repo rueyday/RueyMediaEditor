@@ -2,7 +2,7 @@
 
 import { state, bus, edit } from './state.js';
 import * as ops from './ops.js';
-import { invoke, listen, dialog, fileSrc, isTauri, kindFromPath } from './bridge.js';
+import { invoke, listen, dialog, fileSrc, isTauri } from './bridge.js';
 import { h, btn, icon, fmtDuration, contextMenu, confirmDialog, toast, baseName, uid, $ } from './ui.js';
 import * as timeline from './timeline.js';
 import { releaseMedia } from './preview.js';

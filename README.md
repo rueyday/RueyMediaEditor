@@ -47,17 +47,60 @@ A free, open-source desktop video editor. Compiled Rust engine driving native FF
 
 ## Building and running
 
-Prerequisites: [Rust](https://rustup.rs) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS.
+Every platform needs [Rust](https://rustup.rs), Git, and a C/C++ toolchain; Linux also needs Tauri's system libraries. The website (`index.html`) shows the same commands with a copy button.
+
+**macOS** (Intel or Apple silicon)
 
 ```sh
-cargo install tauri-cli --version "^2"      # once
-git clone https://github.com/rueyday/RueyMediaEditor.git rve
-cd RueyMediaEditor
-cargo tauri dev                              # run a development build
-cargo tauri build                            # or produce a bundle in src-tauri/target/release/bundle/
+xcode-select --install
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo install tauri-cli --version "^2"
+git clone https://github.com/rueyday/RueyMediaEditor.git && cd RueyMediaEditor
+cargo tauri dev            # or: cargo tauri build  -> src-tauri/target/release/bundle/
+```
+
+**Windows 10/11** (PowerShell; WebView2 is already part of Windows)
+
+```powershell
+winget install Rustlang.Rustup Git.Git Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+cargo install tauri-cli --version "^2"
+git clone https://github.com/rueyday/RueyMediaEditor.git; cd RueyMediaEditor
+cargo tauri dev            # or: cargo tauri build  -> src-tauri\target\release\bundle\ (NSIS and MSI installers)
+```
+
+**Linux**
+
+```sh
+# Debian / Ubuntu
+sudo apt install build-essential curl wget file git pkg-config libssl-dev \
+  libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev librsvg2-dev \
+  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav ffmpeg
+# Fedora
+sudo dnf install webkit2gtk4.1-devel gtk3-devel libxdo-devel librsvg2-devel openssl-devel \
+  gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-libav ffmpeg-free @development-tools
+# Arch
+sudo pacman -S --needed webkit2gtk-4.1 gtk3 xdotool librsvg openssl base-devel \
+  gst-plugins-good gst-plugins-bad gst-libav ffmpeg
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo install tauri-cli --version "^2"
+git clone https://github.com/rueyday/RueyMediaEditor.git && cd RueyMediaEditor
+cargo tauri dev            # or: cargo tauri build  -> AppImage, .deb and .rpm
 ```
 
 The first build compiles all dependencies and takes a few minutes. After that, UI edits are visible on reload and engine edits rebuild in seconds.
+
+### Platform notes
+
+| | macOS | Windows | Linux |
+| --- | --- | --- | --- |
+| Web engine | WKWebView (Safari) | WebView2 (Chromium) | WebKitGTK |
+| Preview decoding | H.264, HEVC, ProRes natively | H.264, HEVC, VP9, AV1 | Whatever GStreamer provides; the `gstreamer1.0-*` packages above add H.264, VP8/VP9 and AAC |
+| Proxies | H.264 MP4 | H.264 MP4 | VP8/Opus WebM (plays even without gst-libav) |
+| Hardware export | VideoToolbox | NVENC, Quick Sync, AMF (if the FFmpeg build has them) | NVENC, VAAPI, Quick Sync (distro FFmpeg dependent) |
+| FFmpeg auto-download | Intel and Apple silicon | x64 | x64 and arm64 |
+
+If a clip shows "Cannot decode, making proxy…", the webview could not play that file directly; a proxy is generated automatically and playback continues. Exports never depend on the webview: FFmpeg reads the originals.
 
 **FFmpeg.** RueyMediaEditor needs `ffmpeg` and `ffprobe`. It looks, in order, in: a folder you pick in Settings → FFmpeg; next to the RueyMediaEditor executable (put sidecars in `src-tauri/binaries/`, see the README there); a copy it downloaded itself into the app data folder; your PATH (plus the usual Homebrew and Linux locations). If nothing is found, the app offers a one-click download of static builds from [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static).
 

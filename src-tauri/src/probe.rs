@@ -54,13 +54,19 @@ fn u64_of(v: &Value) -> u64 {
     }
 }
 
-const IMAGE_CODECS: &[&str] = &["png", "mjpeg", "webp", "bmp", "tiff", "gif", "jpeg2000", "heif", "avif"];
+const IMAGE_CODECS: &[&str] = &[
+    "png", "mjpeg", "webp", "bmp", "tiff", "gif", "jpeg2000", "heif", "avif",
+];
 
 pub fn parse_ffprobe_json(path: &Path, json: &str) -> Result<MediaInfo, String> {
-    let v: Value = serde_json::from_str(json).map_err(|e| format!("ffprobe output unreadable: {e}"))?;
+    let v: Value =
+        serde_json::from_str(json).map_err(|e| format!("ffprobe output unreadable: {e}"))?;
     let mut info = MediaInfo {
         path: path.to_string_lossy().to_string(),
-        name: path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default(),
+        name: path
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default(),
         ..Default::default()
     };
     let format = &v["format"];
@@ -118,7 +124,10 @@ pub fn parse_ffprobe_json(path: &Path, json: &str) -> Result<MediaInfo, String> 
         || info.container.ends_with("_pipe")
         || info.container == "png_pipe";
     let still = info.has_video
-        && (image_container || (IMAGE_CODECS.contains(&info.video_codec.as_str()) && video_frames <= 1 && info.container != "gif"));
+        && (image_container
+            || (IMAGE_CODECS.contains(&info.video_codec.as_str())
+                && video_frames <= 1
+                && info.container != "gif"));
 
     info.kind = if still {
         "image".into()
@@ -138,14 +147,25 @@ pub fn parse_ffprobe_json(path: &Path, json: &str) -> Result<MediaInfo, String> 
 
 pub fn probe(tools: &Tools, path: &Path) -> Result<MediaInfo, String> {
     let out = command(&tools.ffprobe)
-        .args(["-v", "error", "-print_format", "json", "-show_format", "-show_streams"])
+        .args([
+            "-v",
+            "error",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+        ])
         .arg(path)
         .stdin(std::process::Stdio::null())
         .output()
         .map_err(|e| format!("Could not run ffprobe: {e}"))?;
     if !out.status.success() {
         let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
-        return Err(if err.is_empty() { "ffprobe failed".into() } else { err });
+        return Err(if err.is_empty() {
+            "ffprobe failed".into()
+        } else {
+            err
+        });
     }
     parse_ffprobe_json(path, &String::from_utf8_lossy(&out.stdout))
 }
