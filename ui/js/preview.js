@@ -2,9 +2,9 @@
 // It approximates the ffmpeg export; "Accurate frame" renders through ffmpeg.
 
 import { state, bus, beginEdit, endEdit, setPlayhead, primaryClip, select } from './state.js';
-import { clipDuration, clipEnd, transformAt, cssFilter, fadeGain, hasAudio, projectDuration, TRANSITIONS, prevClip, setKeyframe, isVisual, hasExportOnlyEffect } from './model.js';
+import { clipDuration, clipEnd, transformAt, cssFilter, gainAt, hasAudio, projectDuration, TRANSITIONS, prevClip, setKeyframe, isVisual, hasExportOnlyEffect, captionsAt, isGenerated } from './model.js';
 import { fileSrc, invoke, isTauri } from './bridge.js';
-import { h, btn, icon, fmtTimecode, clamp, toast } from './ui.js';
+import { h, btn, icon, fmtTimecode, clamp, toast, uid } from './ui.js';
 
 let canvas, ctx, stage, badge, transportEl, timeEl, totalEl, playBtn, loopBtn;
 let scaleFactor = 0.5;
@@ -15,6 +15,21 @@ let accurate = null;             // { t, img }
 let gizmo = null;                // drag state
 let hoverCursor = '';
 let fontsReady = false;
+const customFonts = new Map();   // font file path -> family name (loaded via FontFace)
+
+/** Family name for a custom font file; loads it on first use. */
+export function fontFamilyFor(path) {
+  if (!path) return 'Inter';
+  if (customFonts.has(path)) return customFonts.get(path);
+  const family = 'rvefont-' + uid();
+  customFonts.set(path, family);
+  try {
+    const face = new FontFace(family, `url("${fileSrc(path)}")`);
+    face.load().then(f => document.fonts.add(f)).catch(() => customFonts.set(path, 'Inter'));
+  } catch { customFonts.set(path, 'Inter'); }
+  return family;
+}
+const sourceTime = (clip, t) => clip.reverse ? clip.out - (t - clip.start) * clip.speed : clip.in + (t - clip.start) * clip.speed;
 
 const now = () => (audioCtx ? audioCtx.currentTime : performance.now() / 1000);
 const PW = () => state.project.settings.width;
@@ -44,6 +59,7 @@ export function initPreview(root) {
     btn('', { icon: 'out', title: 'Mark out point (O)', onClick: () => bus.emit('cmd', 'out') }),
     loopBtn,
     btn('', { icon: 'camera', title: 'Accurate frame: render this frame with ffmpeg (exact effects and transitions)', onClick: renderAccurate }),
+    btn('', { icon: 'download', title: 'Export this frame as an image (PNG/JPEG)', onClick: () => bus.emit('cmd', 'export-frame') }),
     icon('volume'), volume,
   );
   root.append(stage, transportEl);
@@ -206,10 +222,10 @@ function activeAt(t) {
     const sorted = [...track.clips].sort((a, b) => a.start - b.start);
     for (let i = 0; i < sorted.length; i++) {
       const c = sorted[i];
-      if (c.start <= t && t < clipEnd(c)) out.push({ clip: c, track, local: c.in + (t - c.start) * c.speed });
+      if (c.start <= t && t < clipEnd(c)) out.push({ clip: c, track, local: sourceTime(c, t) });
       const nx = sorted[i + 1];
       if (nx && nx.transition_in && Math.abs(nx.start - clipEnd(c)) < 0.002 && t >= nx.start && t < nx.start + nx.transition_in.duration) {
-        out.push({ clip: c, track, local: c.in + (t - c.start) * c.speed, extended: true });
+        out.push({ clip: c, track, local: Math.max(0, sourceTime(c, t)), extended: true });
       }
     }
   }
@@ -234,9 +250,14 @@ function syncMedia() {
     const visual = isVisual(clip) && !track.hidden;
     const audible = hasAudio(clip, state.project) && !clip.muted && trackAudible(track);
     if (!visual && !audible) { if (!el.paused) el.pause(); continue; }
-    const g = audible ? clip.volume * fadeGain(clip, t - clip.start) : 0;
+    const g = audible && !clip.reverse ? gainAt(clip, t - clip.start) : 0;
     if (e.gain) e.gain.gain.value = g;
-    if (state.playing) {
+    if (state.playing && clip.reverse) {
+      // Media elements cannot play backwards: step by seeking a few times a second.
+      if (!el.paused) el.pause();
+      const nowMs = performance.now();
+      if (!e.lastSeek || nowMs - e.lastSeek > 120) { e.lastSeek = nowMs; e.seekTarget = local; el.currentTime = local; }
+    } else if (state.playing) {
       el.playbackRate = clamp(clip.speed, 0.0625, 16);
       if (el.paused) {
         el.currentTime = local;
@@ -296,6 +317,7 @@ function draw() {
       break;
     }
   }
+  drawCaptions(t);
   drawGizmo();
   updateBadge();
 }
@@ -312,7 +334,7 @@ function sourceSize(clip, e) {
 export function clipRect(clip, t) {
   const tf = transformAt(clip, t - clip.start);
   let w, hgt;
-  if (clip.kind === 'title' || clip.kind === 'color') { w = PW(); hgt = PH(); }
+  if (isGenerated(clip)) { w = PW(); hgt = PH(); }
   else {
     const [sw, sh] = sourceSize(clip, pool.get(clip.id));
     const c = clip.crop;
@@ -340,6 +362,10 @@ function drawClip(clip, t, alpha) {
     ctx.fillRect(-dw / 2, -dh / 2, dw, dh);
   } else if (clip.kind === 'title') {
     drawTitle(clip, r.tf.scale * s);
+  } else if (clip.kind === 'shape') {
+    drawShape(clip.shape, r.tf.scale * s, ctx);
+  } else if (clip.kind === 'timecode') {
+    drawTimecode(clip, t, r.tf.scale * s);
   } else {
     const e = pool.get(clip.id);
     const ready = e && (e.kind === 'image' ? e.el.complete && e.el.naturalWidth : e.el.readyState >= 2);
@@ -364,7 +390,7 @@ function drawTitle(clip, k) {
   const tt = clip.title || {};
   const size = (tt.font_size || 72) * k;
   const weight = tt.weight === 'bold' ? 700 : 400;
-  ctx.font = `${weight} ${size}px Inter, system-ui, sans-serif`;
+  ctx.font = `${weight} ${size}px "${fontFamilyFor(tt.font_file)}", Inter, system-ui, sans-serif`;
   ctx.textBaseline = 'top';
   const lines = String(tt.text || '').split('\n');
   const lh = size * (tt.line_height || 1.2);
@@ -388,6 +414,93 @@ function drawTitle(clip, k) {
     ctx.fillText(line, lx, y0 + i * lh + (lh - size) / 2);
   });
   ctx.shadowColor = 'transparent';
+}
+
+/** Draws a shape centred at the origin in a frame of PW*k by PH*k. Also used to rasterise shapes for export. */
+export function drawShape(shape, k, g) {
+  const sh = shape || {};
+  const w = PW() * (sh.w ?? 0.3) * k, hgt = PH() * (sh.h ?? 0.2) * k;
+  const lw = Math.max(1, (sh.stroke_width ?? 8) * k);
+  g.lineWidth = lw;
+  g.strokeStyle = sh.stroke || '#ff3b30';
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  switch (sh.kind) {
+    case 'ellipse':
+      g.beginPath(); g.ellipse(0, 0, Math.max(1, w / 2), Math.max(1, hgt / 2), 0, 0, Math.PI * 2);
+      if (sh.fill) { g.fillStyle = sh.fill; g.fill(); }
+      g.stroke();
+      break;
+    case 'line':
+      g.beginPath(); g.moveTo(-w / 2, 0); g.lineTo(w / 2, 0); g.stroke();
+      break;
+    case 'arrow': {
+      const head = Math.max(lw * 3, w * 0.12);
+      g.beginPath(); g.moveTo(-w / 2, 0); g.lineTo(w / 2 - head * 0.6, 0); g.stroke();
+      g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2 - head, -head * 0.55); g.lineTo(w / 2 - head, head * 0.55); g.closePath();
+      g.fillStyle = sh.stroke || '#ff3b30'; g.fill();
+      break;
+    }
+    default:
+      if (sh.fill) { g.fillStyle = sh.fill; g.fillRect(-w / 2, -hgt / 2, w, hgt); }
+      g.strokeRect(-w / 2, -hgt / 2, w, hgt);
+  }
+}
+
+export function timecodeText(clip, t) {
+  const tc = clip.timecode || {};
+  const base = tc.source === 'clip' ? t - clip.start : t;
+  const v = Math.max(0, base + (tc.offset || 0));
+  let text;
+  if (tc.format === 'frames') text = String(Math.round(v * (state.project.settings.fps || 30)));
+  else {
+    const hh = Math.floor(v / 3600), mm = Math.floor(v / 60) % 60, ss = Math.floor(v % 60), ms = Math.floor((v - Math.floor(v)) * 1000);
+    text = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+  }
+  return (tc.label ? tc.label + ' ' : '') + text;
+}
+
+function drawTimecode(clip, t, k) {
+  const tc = clip.timecode || {};
+  const size = (tc.font_size || 40) * k;
+  const m = size * 0.5;
+  ctx.font = `700 ${size}px Inter, system-ui, sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  const text = timecodeText(clip, t);
+  const tw = ctx.measureText(text).width;
+  const fw = PW() * k, fh = PH() * k;
+  const pos = tc.position || 'top-left';
+  const x = pos.endsWith('right') ? fw / 2 - m - tw : pos.endsWith('center') ? -tw / 2 : -fw / 2 + m;
+  const y = pos.startsWith('bottom') ? fh / 2 - m - size : -fh / 2 + m;
+  if (tc.background) { ctx.fillStyle = tc.background; const pad = size * 0.25; ctx.fillRect(x - pad, y - pad, tw + pad * 2, size + pad * 2); }
+  ctx.fillStyle = tc.color || '#fff';
+  ctx.fillText(text, x, y);
+}
+
+function drawCaptions(t) {
+  const caps = captionsAt(state.project, t);
+  if (!caps.length) return;
+  const st = state.project.caption_style || {};
+  const s = scaleFactor, W = canvas.width, H = canvas.height;
+  const size = (st.font_size || 48) * s;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.filter = 'none';
+  ctx.globalAlpha = 1;
+  ctx.font = `${st.weight === 'regular' ? 400 : 700} ${size}px "${fontFamilyFor(st.font_file)}", Inter, system-ui, sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'center';
+  const lines = caps.flatMap(c => c.text.split('\n'));
+  const lh = size * 1.2;
+  const blockH = lh * lines.length;
+  const margin = (st.margin ?? 60) * s;
+  const y0 = st.position === 'top' ? margin : H - margin - blockH;
+  const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+  if (st.background) { ctx.fillStyle = st.background; const pad = size * 0.25; ctx.fillRect(W / 2 - widest / 2 - pad, y0 - pad, widest + pad * 2, blockH + pad * 2); }
+  ctx.fillStyle = st.color || '#fff';
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, y0 + i * lh + (lh - size) / 2));
+  ctx.restore();
 }
 
 function drawTransition(prev, cur, t, p, type) {

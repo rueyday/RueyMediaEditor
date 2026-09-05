@@ -20,6 +20,7 @@ export function initMedia(el) {
     h('div', { class: 'panel-head' }, 'Media', h('span', { class: 'spacer' }),
       btn('', { icon: 'type', class: 'ghost sm', title: 'Add a title clip at the playhead', onClick: () => ops.insertGenerated('title') }),
       btn('', { icon: 'square', class: 'ghost sm', title: 'Add a solid color clip at the playhead', onClick: () => ops.insertGenerated('color') }),
+      btn('', { icon: 'shape', class: 'ghost sm', title: 'Add an annotation (rectangle, ellipse, arrow, line) at the playhead', onClick: e => contextMenu(e.clientX, e.clientY, [{ label: 'Rectangle', onClick: () => ops.insertGenerated('shape', { shapeKind: 'rect' }) }, { label: 'Ellipse', onClick: () => ops.insertGenerated('shape', { shapeKind: 'ellipse' }) }, { label: 'Arrow', onClick: () => ops.insertGenerated('shape', { shapeKind: 'arrow' }) }, { label: 'Line', onClick: () => ops.insertGenerated('shape', { shapeKind: 'line' }) }, { sep: true }, { label: 'Timecode overlay', onClick: () => ops.insertGenerated('timecode') }]) }),
     ),
     h('div', { class: 'media-tools' }, btn('Import', { icon: 'plus', primary: true, onClick: importDialog }), searchEl),
     h('div', { class: 'panel-body' }, listEl),
@@ -133,6 +134,7 @@ function item(id, m) {
 function menu(ev, id, m) {
   contextMenu(ev.clientX, ev.clientY, [
     { label: 'Add to timeline at playhead', onClick: () => ops.insertMedia(id) },
+    { label: 'Use as watermark / logo', disabled: m.kind !== 'image', onClick: () => ops.addWatermark(id) },
     { label: 'Generate proxy', disabled: m.kind !== 'video' || !!state.assets[id]?.proxy, onClick: () => requestProxy(id) },
     { label: 'Re-analyze', onClick: () => loadAssets(id) },
     { label: 'Show in folder', disabled: !isTauri, onClick: () => invoke('reveal_path', { path: m.path }) },

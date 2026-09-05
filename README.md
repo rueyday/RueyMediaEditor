@@ -1,4 +1,4 @@
-# RueyVideoEditor
+# RueyMediaEditor
 
 A free, open-source desktop video editor. Compiled Rust engine driving native FFmpeg, with a plain HTML/CSS/JavaScript interface in a native window (Tauri). No installer: you clone it, build it, run it.
 
@@ -9,7 +9,7 @@ A free, open-source desktop video editor. Compiled Rust engine driving native FF
 
 ## Contents
 
-1. [What RueyVideoEditor does](#what-rve-does)
+1. [What RueyMediaEditor does](#what-rve-does)
 2. [Building and running](#building-and-running)
 3. [Using the editor](#using-the-editor)
 4. [Architecture](#architecture)
@@ -21,22 +21,25 @@ A free, open-source desktop video editor. Compiled Rust engine driving native FF
 
 ---
 
-## What RueyVideoEditor does
+## What RueyMediaEditor does
 
 | Area | Features |
 | --- | --- |
 | Timeline | Unlimited video and audio tracks; drag to move (across tracks), trim handles, razor tool, split at playhead, ripple delete, duplicate, copy/paste, marquee selection, snapping to clip edges/playhead/markers, markers, in/out points, zoom, undo/redo with labelled steps |
 | Transform | Position, scale, rotation, opacity per clip. Drag, resize and rotate directly on the preview. Crop. Fit / fill |
-| Keyframes | Every transform property can be keyframed. Linear or eased interpolation. Keyframes move with trims and split correctly |
-| Speed | 0.1× to 16× per clip, audio stays in pitch (`atempo`) |
+| Keyframes | Every transform property and clip volume can be keyframed. Linear or eased interpolation. Keyframes move with trims and split correctly |
+| Speed | 0.1× to 16× per clip, audio stays in pitch (`atempo`). Reverse playback |
 | Transitions | Cross dissolve, fade through black/white, wipes, slides, circle open/close, radial, zoom, pixelize, blur, noise dissolve, squeeze, diagonal. Any of FFmpeg's `xfade` transitions is one line to add |
-| Titles | Text clips: size, weight, colour, alignment, background box, padding, shadow, line height. Same Inter font in preview and export |
+| Titles | Text clips: size, weight, colour, alignment, background box, padding, shadow, line height. Bundled Inter font or any .ttf/.otf you pick, identical in preview and export |
+| Captions | Caption track with its own lane on the timeline. Type them, import/export SRT (VTT import too), or transcribe a clip locally with whisper.cpp. Styled and burned in on export |
+| Annotations | Rectangle, ellipse, arrow and line clips with stroke, fill and size; move, scale and rotate them on the preview. Timecode overlays (HH:MM:SS.mmm or frame number, timeline or clip time) |
+| Researcher tools | Split-screen layouts (side by side, three across, top/bottom, 2×2, picture in picture), "Compare with labels" (Baseline · Ours · Ground truth), sync two clips by audio, freeze frame, remove silence, watermark/logo helper, export the current frame as PNG/JPEG |
 | Colour clips | Solid colour backgrounds |
-| Effects | Colour correction (brightness, contrast, saturation, gamma, hue), blur, sharpen, flip, black & white, sepia, invert, vignette, chroma key, 3D LUT (.cube), film grain. Stackable and reorderable |
+| Effects | Colour correction (brightness, contrast, saturation, gamma, hue, exposure, colour temperature), blur, sharpen, flip, black & white, sepia, invert, vignette, chroma key, 3D LUT (.cube), film grain. One-click looks (warm, cool, cinematic, vivid, faded, noir…). Stackable and reorderable |
 | Audio | Volume, fade in/out (drag handles on the clip), mute, per-track mute/solo, detach audio from video, master preview volume |
 | Media | Anything FFmpeg can read. Thumbnail filmstrips, waveforms, automatic proxies for files the webview can't decode (or for everything above 1080p, configurable) |
 | Preview | Real-time canvas compositor with an "Accurate frame" button that renders the current frame through FFmpeg for pixel-exact results |
-| Export | H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only (AAC, MP3, Opus, WAV, FLAC). Constant quality or bitrate. Hardware encoders (Apple VideoToolbox, NVIDIA NVENC, Intel Quick Sync, AMD AMF) when available. Any resolution and frame rate. In/out range export. Progress with ETA, cancel, and "show me the ffmpeg command" |
+| Export | H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only (AAC, MP3, Opus, WAV, FLAC). Constant quality, bitrate, or a target file size. Venue presets (ICRA/IROS, RSS, CVPR, NeurIPS, CoRL, social) that warn about length and size limits. Hardware encoders (Apple VideoToolbox, NVIDIA NVENC, Intel Quick Sync, AMD AMF) when available. Any resolution (16:9, 9:16, 1:1, 4:3, 21:9, custom) and frame rate. In/out range export. Progress with ETA, cancel, and "show me the ffmpeg command" |
 | Projects | `.rve` JSON files. Autosave recovery copy every minute |
 | App | Dark and light theme, keyboard shortcuts, FFmpeg auto-download, cache management |
 
@@ -46,15 +49,15 @@ Prerequisites: [Rust](https://rustup.rs) and the [Tauri prerequisites](https://t
 
 ```sh
 cargo install tauri-cli --version "^2"      # once
-git clone https://github.com/rueyday/RueyVideoEditor.git rve
-cd RueyVideoEditor
+git clone https://github.com/rueyday/RueyMediaEditor.git rve
+cd RueyMediaEditor
 cargo tauri dev                              # run a development build
 cargo tauri build                            # or produce a bundle in src-tauri/target/release/bundle/
 ```
 
 The first build compiles all dependencies and takes a few minutes. After that, UI edits are visible on reload and engine edits rebuild in seconds.
 
-**FFmpeg.** RueyVideoEditor needs `ffmpeg` and `ffprobe`. It looks, in order, in: a folder you pick in Settings → FFmpeg; next to the RueyVideoEditor executable (put sidecars in `src-tauri/binaries/`, see the README there); a copy it downloaded itself into the app data folder; your PATH (plus the usual Homebrew and Linux locations). If nothing is found, the app offers a one-click download of static builds from [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static).
+**FFmpeg.** RueyMediaEditor needs `ffmpeg` and `ffprobe`. It looks, in order, in: a folder you pick in Settings → FFmpeg; next to the RueyMediaEditor executable (put sidecars in `src-tauri/binaries/`, see the README there); a copy it downloaded itself into the app data folder; your PATH (plus the usual Homebrew and Linux locations). If nothing is found, the app offers a one-click download of static builds from [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static).
 
 **Working on the UI without compiling.** Open `ui/index.html` through any static server (for example `python3 -m http.server -d ui 8000`). A mock engine kicks in: you can import files, edit, and see the whole interface. Export and proxies need the real app.
 
@@ -68,7 +71,11 @@ The first build compiles all dependencies and takes a few minutes. After that, U
 6. **Audio**: drag the round handles at the top corners of a clip to fade; the Inspector has volume, mute and Detach audio.
 7. **Export** with ⌘E. Pick a preset or dial in codec, quality, resolution and frame rate. Set in/out points (`I`, `O`) to export a range.
 
-Shortcuts: Space play/pause · J/K/L · ←/→ frame step (Shift: 1 s) · ↑/↓ previous/next edit · Home/End · S split · C razor · V select · N snapping · M marker · I/O in/out · ⌘Z/⌘⇧Z undo/redo · ⌘C/X/V · ⌘D duplicate · ⌘S save · ⌘O open · ⌘N new · ⌘E export · +/− zoom · ⇧Z zoom to fit · , and . nudge one frame.
+Shortcuts: Space play/pause · J/K/L · ←/→ frame step (Shift: 1 s) · ↑/↓ previous/next edit · Home/End · S split · C razor · V select · N snapping · M marker · I/O in/out · R reverse · F freeze frame · ⇧C add caption · ⌘Z/⌘⇧Z undo/redo · ⌘C/X/V · ⌘D duplicate · ⌘S save · ⌘O open · ⌘N new · ⌘E export · +/− zoom · ⇧Z zoom to fit · , and . nudge one frame.
+
+**Researcher workflows.** Put each experiment video on its own track, select them all, and pick a layout in the Inspector (or right-click → Layout). "Compare with labels…" adds a title above each cell. "Sync by audio" lines up two recordings of the same event. Add a timecode overlay to show frame numbers, annotate with arrows and boxes, freeze a frame to talk over it, and export with a venue preset that keeps the file under the size limit.
+
+**Captions.** The Captions tab (left panel) lists every caption; ⇧C adds one at the playhead. Import SRT/VTT or export SRT for upload. For automatic captions install [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`brew install whisper-cpp` on macOS), download a `ggml-*.bin` model, set both paths in Settings → Captions, select a clip and press Auto. Everything runs locally.
 
 ## Architecture
 
@@ -84,6 +91,7 @@ ui/                      Front end. No framework, no bundler. Tauri serves it as
   js/preview.js          Canvas compositor, playback clock, Web Audio mixer, on-canvas transform gizmo
   js/inspector.js        Property panel
   js/media.js            Media bin, importing, proxies, drag to timeline
+  js/captions.js         Captions panel: manual, SRT import/export, whisper.cpp
   js/export.js           Export dialog and progress
   js/settings.js         Settings, FFmpeg setup, project settings
   js/shortcuts.js        Keyboard map
@@ -96,6 +104,7 @@ src-tauri/               Engine (Rust).
   src/ffmpeg.rs          Finding, downloading and running FFmpeg with progress parsing
   src/probe.rs           ffprobe JSON → MediaInfo
   src/thumbs.rs          Filmstrips, waveforms, proxies
+  src/tools.rs           Freeze-frame extraction, silence detection, audio sync, whisper.cpp transcription
   src/project.rs         Project model (serde), mirrors ui/js/model.js
   src/export.rs          Project → ffmpeg filter graph and command line
   tests/                 Integration test that runs a real export
@@ -116,7 +125,9 @@ docs/                    The website (GitHub Pages: Settings → Pages → Deplo
 3. **Tracks.** Each video track becomes one continuous stream: transparent `color` fillers for gaps, `concat` between clips, and `xfade` where a clip has an In transition and touches the previous clip (the previous layer is extended by the transition length so both sides have frames).
 4. **Stacking.** Tracks are overlaid bottom to top onto a black base with `overlay=eof_action=pass`.
 5. **Audio.** Each audible clip: `aformat` → `atempo` chain (speed) → `atrim` → `volume` → `afade` → `adelay` to its timeline position. All are mixed with `amix=normalize=0`, padded and trimmed to the timeline length. Track mute/solo and clip mute are honoured.
-6. **Output.** Optional in/out `trim`, optional resize, pixel format, codec arguments chosen per encoder (CRF for x264/x265/VP9/AV1, bitrate for hardware encoders, palette generation for GIF).
+6. **Captions and output.** Captions are `drawtext` filters with `enable='between(t,start,end)'` on the composited frame. Then optional in/out `trim`, optional resize, pixel format, codec arguments chosen per encoder (CRF for x264/x265/VP9/AV1, bitrate for hardware encoders, palette generation for GIF).
+
+Shapes are rasterised by the UI (the same canvas code that previews them) into PNGs at project resolution and composited like images, so ffmpeg never needs a vector renderer. Reversed clips use `reverse`/`areverse` on exactly the trimmed source range. Timecode overlays are `drawtext` with `%{pts:hms:offset}` or `%{eif:n+offset:d}`.
 
 Keyframes become nested `if(lt(t,…),…)` expressions (`kf_expr`), identical in meaning to the JavaScript interpolation in `model.js`. The full command and filter graph are written to `export.log` and `graph.txt` in the cache folder, and the export dialog can show and copy them, so you can reproduce or tweak any render by hand.
 
@@ -177,4 +188,5 @@ The UI has no build step; open it in a browser with the mock engine to exercise 
 - Keyframed opacity uses `geq`, which is slow on big frames. Constant opacity is fast.
 - The preview approximates some transitions (radial, zoom, pixelize, …) as cross dissolves and cannot show chroma key, LUTs, sharpen or grain. "Accurate frame" renders them exactly.
 - Range export decodes from the beginning of each involved clip; it is correct but not as fast as it could be.
-- Not yet: nested sequences, audio effects beyond volume/fade, speed ramps, text animation presets, motion tracking, stabilisation. All are additive to the current design (see Hacking guide).
+- Reversed clips play as stepped frames in the preview (media elements cannot play backwards); the export is smooth. Long reversed clips use memory proportional to their length.
+- Not yet: nested sequences, audio effects beyond volume/fade, speed ramps, text animation presets, motion tracking, stabilisation, AI background removal. All are additive to the current design (see Hacking guide).

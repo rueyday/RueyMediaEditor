@@ -4,7 +4,7 @@ import { state, bus } from './state.js';
 import { projectDuration } from './model.js';
 import { invoke, listen, dialog, isTauri } from './bridge.js';
 import { h, btn, icon, modal, selectInput, numberInput, rangeInput, fmtTimecode, toast, baseName } from './ui.js';
-import { pause } from './preview.js';
+import { pause, drawShape } from './preview.js';
 import { RESOLUTIONS, FRAME_RATES } from './model.js';
 
 const HW = ['h264_videotoolbox', 'hevc_videotoolbox', 'h264_nvenc', 'hevc_nvenc', 'h264_qsv', 'hevc_qsv', 'h264_amf', 'hevc_amf', 'h264_vaapi', 'hevc_vaapi'];
@@ -42,6 +42,26 @@ const PRESETS = [
 ];
 const X264_PRESETS = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 
+// Conference / venue presets. Limits are typical supplementary-material rules;
+// check the call for papers of the year you submit to. Edit freely.
+export const VENUES = [
+  { id: '', name: 'None' },
+  { id: 'icra', name: 'ICRA / IROS video (≤ 3 min, ≤ 100 MB, 1080p, MP4)', maxSeconds: 180, maxMB: 100, width: 1920, height: 1080, fps: 30 },
+  { id: 'rss', name: 'RSS supplementary video (≤ 5 min, ≤ 100 MB, 1080p)', maxSeconds: 300, maxMB: 100, width: 1920, height: 1080, fps: 30 },
+  { id: 'cvpr', name: 'CVPR / ICCV supplementary (≤ 100 MB, MP4/H.264)', maxSeconds: 0, maxMB: 100, width: 1920, height: 1080, fps: 30 },
+  { id: 'neurips', name: 'NeurIPS / ICML supplementary (≤ 100 MB)', maxSeconds: 0, maxMB: 100, width: 1920, height: 1080, fps: 30 },
+  { id: 'corl', name: 'CoRL video (≤ 5 min, ≤ 100 MB)', maxSeconds: 300, maxMB: 100, width: 1920, height: 1080, fps: 30 },
+  { id: 'social', name: 'Social media vertical (9:16, 1080×1920, 30 fps)', maxSeconds: 0, maxMB: 0, width: 1080, height: 1920, fps: 30 },
+  { id: 'twitter', name: 'X / Twitter (≤ 2:20, ≤ 512 MB, 1080p)', maxSeconds: 140, maxMB: 512, width: 1920, height: 1080, fps: 30 },
+];
+
+/** Video kbps that keeps the file under `mb` megabytes for `seconds`, leaving room for audio. */
+export function bitrateForSize(mb, seconds, audioKbps) {
+  if (!mb || !seconds) return 0;
+  const total = mb * 8192 / seconds; // kbit/s
+  return Math.max(300, Math.floor((total - audioKbps) * 0.95));
+}
+
 function extFor(codec, audio) {
   if (codec === 'none') return audio === 'libmp3lame' ? 'mp3' : audio === 'pcm_s16le' ? 'wav' : audio === 'flac' ? 'flac' : audio === 'libopus' ? 'opus' : 'm4a';
   return VIDEO_CODECS.find(c => c.id === codec)?.ext || 'mp4';
@@ -75,6 +95,8 @@ export function openExportDialog() {
     fps: last.fps || 'project',
     range: state.inPoint != null || state.outPoint != null ? 'inout' : 'all',
     outputDir: last.outputDir || '',
+    venue: last.venue || '',
+    targetMB: last.targetMB || 0,
   };
   if (!available(s.video_codec)) s.video_codec = 'libx264';
 
@@ -82,6 +104,19 @@ export function openExportDialog() {
   const rebuild = () => {
     form.replaceChildren();
     const row = (label, ctl) => form.append(h('label', {}, label), ctl);
+    const dur = s.range === 'inout' ? (state.outPoint ?? projectDuration(state.project)) - (state.inPoint ?? 0) : projectDuration(state.project);
+    row('Venue preset', selectInput(s.venue, VENUES, v => {
+      s.venue = v;
+      const ven = VENUES.find(x => x.id === v);
+      if (ven && ven.id) { s.preset = 'h264'; s.video_codec = 'libx264'; s.audio_codec = 'aac'; s.resolution = `${ven.width}x${ven.height}`; s.fps = String(ven.fps); s.targetMB = ven.maxMB || 0; if (ven.maxMB) { s.useBitrate = true; } }
+      rebuild();
+    }));
+    const ven = VENUES.find(x => x.id === s.venue);
+    if (ven && ven.id) {
+      const warnings = [];
+      if (ven.maxSeconds && dur > ven.maxSeconds) warnings.push(`Too long: ${fmtTimecode(dur, ps.fps)} exceeds the ${Math.round(ven.maxSeconds / 60)} minute limit. Set in/out points or trim.`);
+      form.append(h('div', { class: `full hint ${warnings.length ? 'warn-text' : ''}` }, warnings.length ? warnings.join(' ') : `Within the ${ven.name.split(' (')[0]} limits: ${fmtTimecode(dur, ps.fps)}${ven.maxMB ? `, bitrate chosen for ≤ ${ven.maxMB} MB` : ''}.`));
+    }
     row('Preset', selectInput(s.preset, PRESETS.filter(p => p.id !== 'hw' || hw), v => {
       s.preset = v;
       const p = PRESETS.find(x => x.id === v);
@@ -97,7 +132,9 @@ export function openExportDialog() {
       const mode = selectInput(s.useBitrate ? 'bitrate' : 'quality', [{ id: 'quality', name: 'Constant quality' }, { id: 'bitrate', name: 'Bitrate' }], v => { s.useBitrate = v === 'bitrate'; if (s.useBitrate && !s.bitrate_kbps) s.bitrate_kbps = 8000; rebuild(); });
       row('Rate control', mode);
       if (s.useBitrate) {
-        q.append(numberInput(s.bitrate_kbps, { min: 100, max: 200000, step: 100, onChange: v => { s.bitrate_kbps = v; setLabel(); } }), h('span', { class: 'hint' }, 'kbps'));
+        const sizeIn = numberInput(s.targetMB, { min: 0, max: 100000, step: 1, onChange: v => { s.targetMB = v; if (v > 0) { s.bitrate_kbps = bitrateForSize(v, dur, s.audio_bitrate_kbps); br.value = s.bitrate_kbps; } setLabel(); } });
+        const br = numberInput(s.targetMB > 0 ? (s.bitrate_kbps = bitrateForSize(s.targetMB, dur, s.audio_bitrate_kbps)) : s.bitrate_kbps, { min: 100, max: 200000, step: 100, onChange: v => { s.bitrate_kbps = v; s.targetMB = 0; sizeIn.value = 0; setLabel(); } });
+        q.append(br, h('span', { class: 'hint' }, 'kbps · or target'), sizeIn, h('span', { class: 'hint' }, 'MB'));
       } else {
         q.append(rangeInput(s.quality, { min: 0, max: 51, step: 1, onInput: v => { s.quality = v; setLabel(); } }), qLabel);
       }
@@ -200,7 +237,8 @@ async function runExport(settings) {
     });
   });
   try {
-    started = await invoke('start_export', { project: state.project, settings, customDir: state.settings.ffmpegDir || null });
+    const prepared = await prepareProjectForExport();
+    started = await invoke('start_export', { project: prepared, settings, customDir: state.settings.ffmpegDir || null });
   } catch (e) {
     finished = true;
     dlg.close();
@@ -222,7 +260,49 @@ function showCommand(started) {
   if (!started) return;
   modal({
     title: 'ffmpeg command', wide: true,
-    body: h('div', {}, h('div', { class: 'hint', style: { marginBottom: '6px' } }, 'This is what RueyVideoEditor ran. The filter graph is in graph.txt next to the log.'), h('div', { class: 'log-box mono' }, started.command)),
+    body: h('div', {}, h('div', { class: 'hint', style: { marginBottom: '6px' } }, 'This is what RueyMediaEditor ran. The filter graph is in graph.txt next to the log.'), h('div', { class: 'log-box mono' }, started.command)),
     buttons: [{ label: 'Copy', onClick: c => { navigator.clipboard?.writeText(started.command); toast('Copied'); c(); } }, { label: 'Close', primary: true }],
   });
+}
+
+
+/** Saves the frame under the playhead as PNG or JPEG through ffmpeg (exact render). */
+export async function exportFrameDialog() {
+  pause();
+  if (projectDuration(state.project) <= 0) { toast('The timeline is empty', 'error'); return; }
+  const t = state.playhead;
+  const name = `${(state.project.name || 'frame').replace(/[^\w\- ]+/g, '')}-${fmtTimecode(t, state.project.settings.fps).replace(/:/g, '.')}.png`;
+  const out = await dialog.saveFile(name, [{ name: 'PNG', extensions: ['png'] }, { name: 'JPEG', extensions: ['jpg', 'jpeg'] }]);
+  if (!out) return;
+  try {
+    await invoke('export_frame', { project: state.project, time: t, output: out, width: state.project.settings.width, customDir: state.settings.ffmpegDir || null });
+    toast(`Saved ${baseName(out)}`, 'success');
+  } catch (e) { toast(`Frame export failed: ${e}`, 'error', 6000); }
+}
+
+/** Rasterises shape clips to PNGs so ffmpeg can composite them. Returns a project copy for export. */
+export async function prepareProjectForExport() {
+  const p = JSON.parse(JSON.stringify(state.project));
+  const { width: W, height: H } = p.settings;
+  for (const track of p.tracks) {
+    for (const clip of track.clips) {
+      if (clip.kind !== 'shape') continue;
+      const key = JSON.stringify([clip.shape, W, H]);
+      const live = findLive(clip.id);
+      if (live && live.image_path && live.image_hash === key) { clip.image_path = live.image_path; continue; }
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const g = c.getContext('2d');
+      g.translate(W / 2, H / 2);
+      drawShape(clip.shape, 1, g);
+      const path = await invoke('save_data_url', { name: `shape-${clip.id}`, dataUrl: c.toDataURL('image/png') });
+      clip.image_path = path;
+      if (live) { live.image_path = path; live.image_hash = key; }
+    }
+  }
+  return p;
+}
+function findLive(id) {
+  for (const t of state.project.tracks) { const c = t.clips.find(x => x.id === id); if (c) return c; }
+  return null;
 }

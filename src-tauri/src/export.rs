@@ -330,7 +330,7 @@ impl<'a> Builder<'a> {
         let size = style.font_size.max(4.0);
         let y = if style.position == "top" { n(style.margin.max(0.0)) } else { format!("h-text_h-{}", n(style.margin.max(0.0))) };
         let mut f = format!(
-            "drawtext=textfile='{}':fontfile='{}':fontsize={}:fontcolor={}:x=(w-text_w)/2:y={y}:line_spacing={}:text_align=center",
+            "drawtext=textfile='{}':fontfile='{}':fontsize={}:fontcolor={}:x=(w-text_w)/2:y={y}:line_spacing={}",
             esc_path(&file),
             esc_path(&font),
             n(size),

@@ -54,7 +54,10 @@ export function initShortcuts(actions) {
       case 'o': handled(); ops.setOutPoint(); return;
       case 'I': case 'O': handled(); ops.clearInOut(); return;
       case 'v': case 'V': handled(); timeline.setTool('select'); return;
-      case 'c': case 'C': handled(); timeline.setTool('razor'); return;
+      case 'c': handled(); timeline.setTool('razor'); return;
+      case 'C': handled(); bus.emit('cmd', 'add-caption'); return;
+      case 'r': case 'R': handled(); ops.toggleReverse(); return;
+      case 'f': case 'F': handled(); ops.freezeFrame(); return;
       case 'n': case 'N': handled(); timeline.toggleSnap(); return;
       case '+': case '=': handled(); timeline.zoomBy(1.4); return;
       case '-': case '_': handled(); timeline.zoomBy(1 / 1.4); return;

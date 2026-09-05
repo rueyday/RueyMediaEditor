@@ -133,6 +133,27 @@ const mock = {
       case 'reveal_path': case 'open_path': return;
       case 'open_url': window.open(args.url, '_blank'); return;
       case 'set_title': document.title = args.title; return;
+      case 'quit_app': window.close(); return;
+      case 'extract_frame': {
+        const v = await loadEl('video', urlOf(args.path));
+        await new Promise(res => { v.onseeked = res; v.currentTime = Math.max(0, args.time); });
+        const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        return c.toDataURL('image/png');
+      }
+      case 'export_frame': {
+        const canvas = document.querySelector('.preview-stage canvas');
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL(args.output.endsWith('.jpg') ? 'image/jpeg' : 'image/png');
+        a.download = nameOf(args.output) || 'frame.png';
+        a.click();
+        return args.output;
+      }
+      case 'save_data_url': return args.dataUrl;
+      case 'detect_silence': return [];
+      case 'sync_offset': return 0;
+      case 'whisper_status': return { found: false, path: null };
+      case 'transcribe': throw new Error('Auto-captions need the desktop app and whisper.cpp.');
       default: throw new Error(`mock: unknown command ${cmd}`);
     }
   },

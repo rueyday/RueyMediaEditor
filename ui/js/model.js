@@ -6,13 +6,21 @@ import { uid, clamp } from './ui.js';
 export const PROJECT_VERSION = 1;
 
 export const RESOLUTIONS = [
-  { label: '1080p · 1920×1080', w: 1920, h: 1080 },
-  { label: '4K UHD · 3840×2160', w: 3840, h: 2160 },
-  { label: '720p · 1280×720', w: 1280, h: 720 },
-  { label: 'Vertical 1080×1920', w: 1080, h: 1920 },
-  { label: 'Square 1080×1080', w: 1080, h: 1080 },
+  { label: '16:9 · 1080p · 1920×1080', w: 1920, h: 1080 },
+  { label: '16:9 · 1440p · 2560×1440', w: 2560, h: 1440 },
+  { label: '16:9 · 4K UHD · 3840×2160', w: 3840, h: 2160 },
+  { label: '16:9 · 720p · 1280×720', w: 1280, h: 720 },
+  { label: '9:16 · Vertical 1080×1920', w: 1080, h: 1920 },
+  { label: '9:16 · Vertical 720×1280', w: 720, h: 1280 },
+  { label: '1:1 · Square 1080×1080', w: 1080, h: 1080 },
+  { label: '4:3 · 1440×1080', w: 1440, h: 1080 },
+  { label: '4:3 · 1024×768', w: 1024, h: 768 },
+  { label: '21:9 · 2560×1080', w: 2560, h: 1080 },
   { label: '2K DCI · 2048×1080', w: 2048, h: 1080 },
   { label: '4K DCI · 4096×2160', w: 4096, h: 2160 },
+];
+export const ASPECTS = [
+  { id: '16:9', w: 16, h: 9 }, { id: '9:16', w: 9, h: 16 }, { id: '1:1', w: 1, h: 1 }, { id: '4:3', w: 4, h: 3 }, { id: '21:9', w: 21, h: 9 },
 ];
 export const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
 
@@ -28,8 +36,54 @@ export function newProject(name = 'Untitled') {
       newTrack('audio', 'A1'),
     ],
     markers: [],
+    captions: [],
+    caption_style: defaultCaptionStyle(),
   };
 }
+
+export function defaultCaptionStyle() {
+  return { font_size: 48, color: '#ffffff', background: '#000000a0', position: 'bottom', margin: 60, weight: 'bold', font_file: null };
+}
+export function newCaption(start, end, text = '') {
+  return { id: uid(), start, end, text };
+}
+export function captionsAt(p, t) {
+  return (p.captions || []).filter(c => c.start <= t && t < c.end && c.text.trim());
+}
+
+/** Parse SubRip text into caption objects. */
+export function parseSrt(text) {
+  const out = [];
+  const blocks = String(text).replace(/\r/g, '').split(/\n\s*\n/);
+  const ts = s => { const m = s.trim().match(/(\d+):(\d+):(\d+)[,.](\d+)/); if (!m) return null; return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + (+m[4].padEnd(3, '0').slice(0, 3)) / 1000; };
+  for (const block of blocks) {
+    const lines = block.split('\n').filter(l => l.trim() !== '');
+    if (!lines.length) continue;
+    const ti = lines.findIndex(l => l.includes('-->'));
+    if (ti < 0) continue;
+    const [a, b] = lines[ti].split('-->');
+    const start = ts(a), end = ts(b);
+    if (start == null || end == null) continue;
+    const body = lines.slice(ti + 1).join('\n').replace(/<[^>]+>/g, '').trim();
+    out.push(newCaption(start, end, body));
+  }
+  return out.sort((x, y) => x.start - y.start);
+}
+export function formatSrt(captions) {
+  const pad = (n, w = 2) => String(n).padStart(w, '0');
+  const ts = t => { const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = Math.floor(t % 60), ms = Math.round((t - Math.floor(t)) * 1000); return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`; };
+  return [...captions].sort((a, b) => a.start - b.start).map((c, i) => `${i + 1}\n${ts(c.start)} --> ${ts(c.end)}\n${c.text}\n`).join('\n');
+}
+
+export function newShape(kind = 'rect') {
+  return { kind, stroke: '#ff3b30', stroke_width: 8, fill: kind === 'arrow' || kind === 'line' ? null : null, w: 0.3, h: 0.2 };
+}
+export function newTimecode() {
+  return { format: 'hms', source: 'timeline', font_size: 40, color: '#ffffff', background: '#000000a0', position: 'top-left', offset: 0, label: '' };
+}
+export const SHAPES = [
+  { id: 'rect', name: 'Rectangle' }, { id: 'ellipse', name: 'Ellipse' }, { id: 'arrow', name: 'Arrow' }, { id: 'line', name: 'Line' },
+];
 
 export function newTrack(kind, name) {
   return { id: uid(), kind, name: name || (kind === 'video' ? 'Video' : 'Audio'), muted: false, solo: false, hidden: false, locked: false, clips: [] };
@@ -48,6 +102,7 @@ export function newClip(props) {
     in: 0,
     out: 0,
     speed: 1,
+    reverse: false,
     volume: 1,
     muted: false,
     audio_detached: false,
@@ -61,14 +116,18 @@ export function newClip(props) {
     transition_out: null,
     title: null,
     color: null,
+    shape: null,
+    image_path: null,
+    timecode: null,
     name: '',
     ...props,
   };
 }
 
 export function newTitle(text = 'Title') {
-  return { text, font_size: 96, color: '#ffffff', weight: 'bold', align: 'center', background: null, padding: 24, shadow: true, line_height: 1.2 };
+  return { text, font_size: 96, color: '#ffffff', weight: 'bold', align: 'center', background: null, padding: 24, shadow: true, line_height: 1.2, font_file: null };
 }
+export const isGenerated = c => ['title', 'color', 'shape', 'timecode'].includes(c.kind);
 
 export const clipDuration = c => Math.max(0, (c.out - c.in) / (c.speed > 0 ? c.speed : 1));
 export const clipEnd = c => c.start + clipDuration(c);
@@ -140,7 +199,7 @@ export const KEYFRAMABLE = ['x', 'y', 'scale', 'rotation', 'opacity'];
 
 export function kfValue(clip, key, tLocal) {
   const kfs = clip.keyframes?.[key];
-  const base = clip.transform[key];
+  const base = key === 'volume' ? clip.volume : clip.transform[key];
   if (!kfs || !kfs.length) return base;
   const k = [...kfs].sort((a, b) => a.t - b.t);
   if (tLocal <= k[0].t) return k[0].v;
@@ -179,6 +238,11 @@ export function removeKeyframe(clip, key, tLocal) {
 }
 export function keyframeAt(clip, key, tLocal) {
   return clip.keyframes?.[key]?.find(k => Math.abs(k.t - tLocal) < 1e-3) || null;
+}
+
+/** Volume (possibly keyframed) times fades at local time. */
+export function gainAt(clip, tLocal) {
+  return Math.max(0, kfValue(clip, 'volume', tLocal)) * fadeGain(clip, tLocal);
 }
 
 /** Audio gain multiplier from fades at local time. */
@@ -228,6 +292,8 @@ export const EFFECTS = {
     { key: 'saturation', name: 'Saturation', min: 0, max: 3, step: 0.01, def: 1 },
     { key: 'gamma', name: 'Gamma', min: 0.1, max: 3, step: 0.01, def: 1 },
     { key: 'hue', name: 'Hue', min: -180, max: 180, step: 1, def: 0 },
+    { key: 'exposure', name: 'Exposure', min: -3, max: 3, step: 0.05, def: 0 },
+    { key: 'temperature', name: 'Temperature (K)', min: 2000, max: 12000, step: 100, def: 6500, approx: true },
   ] },
   blur: { name: 'Blur', preview: true, params: [{ key: 'radius', name: 'Radius', min: 0, max: 50, step: 0.5, def: 4 }] },
   sharpen: { name: 'Sharpen', preview: false, params: [{ key: 'amount', name: 'Amount', min: 0, max: 3, step: 0.05, def: 1 }] },
@@ -248,12 +314,24 @@ export const EFFECTS = {
   noise: { name: 'Film grain', preview: false, params: [{ key: 'strength', name: 'Strength', min: 0, max: 100, step: 1, def: 20 }] },
 };
 
-export function newEffect(type) {
+export function newEffect(type, overrides = {}) {
   const def = EFFECTS[type];
   const params = {};
   for (const p of def.params) params[p.key] = p.def;
+  Object.assign(params, overrides);
   return { type, params, enabled: true };
 }
+
+/** One-click looks: each is a list of effects to add. */
+export const LOOKS = [
+  { id: 'warm', name: 'Warm', effects: [['color', { temperature: 5000, saturation: 1.1 }]] },
+  { id: 'cool', name: 'Cool', effects: [['color', { temperature: 8000, saturation: 0.95 }]] },
+  { id: 'cinematic', name: 'Cinematic', effects: [['color', { contrast: 1.15, saturation: 0.85, gamma: 0.95 }], ['vignette', { angle: 0.5 }]] },
+  { id: 'vivid', name: 'Vivid', effects: [['color', { contrast: 1.1, saturation: 1.4 }]] },
+  { id: 'faded', name: 'Faded film', effects: [['color', { contrast: 0.85, saturation: 0.8, brightness: 0.05 }], ['noise', { strength: 12 }]] },
+  { id: 'bw', name: 'Black & white', effects: [['grayscale', {}], ['color', { contrast: 1.2 }]] },
+  { id: 'noir', name: 'Noir', effects: [['grayscale', {}], ['color', { contrast: 1.4, brightness: -0.05 }], ['vignette', { angle: 0.8 }]] },
+];
 
 /** CSS filter string approximating the effect stack for canvas preview. */
 export function cssFilter(effects, pxScale = 1) {
@@ -263,8 +341,9 @@ export function cssFilter(effects, pxScale = 1) {
     const p = e.params || {};
     switch (e.type) {
       case 'color':
-        parts.push(`brightness(${1 + (p.brightness ?? 0)}) contrast(${p.contrast ?? 1}) saturate(${p.saturation ?? 1})`);
+        parts.push(`brightness(${(1 + (p.brightness ?? 0)) * Math.pow(2, p.exposure ?? 0)}) contrast(${p.contrast ?? 1}) saturate(${p.saturation ?? 1})`);
         if (p.hue) parts.push(`hue-rotate(${p.hue}deg)`);
+        if (p.temperature && Math.abs(p.temperature - 6500) > 50) parts.push(p.temperature < 6500 ? `sepia(${Math.min(0.5, (6500 - p.temperature) / 6000)})` : `hue-rotate(${Math.min(20, (p.temperature - 6500) / 300)}deg)`);
         break;
       case 'blur': parts.push(`blur(${(p.radius ?? 4) * pxScale}px)`); break;
       case 'grayscale': parts.push('grayscale(1)'); break;

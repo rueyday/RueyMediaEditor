@@ -1,13 +1,15 @@
 // Multi-track timeline: rendering, selection, dragging, trimming, snapping.
 
 import { state, bus, edit, beginEdit, endEdit, select, clearSelection, selectedClips, setPlayhead, undo, redo, canUndo, canRedo } from './state.js';
-import { clipDuration, clipEnd, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, sortedClips, TRANSITIONS } from './model.js';
+import { clipDuration, clipEnd, overlaps, freePosition, isVisual, hasAudio, projectDuration, prevClip, nextClip, sortedClips, TRANSITIONS, isGenerated } from './model.js';
+import { selectCaption } from './captions.js';
 import * as ops from './ops.js';
 import { h, btn, icon, fmtTimecode, clamp, contextMenu, promptDialog, confirmDialog, toast, $ } from './ui.js';
 import { fileSrc } from './bridge.js';
 import { pause } from './preview.js';
 
 let root, viewport, content, ruler, lanesEl, headersScroll, playheadEl, snapLine, marquee, emptyHint, zoomSlider, toolBtns = {};
+let capDrag = null;
 let drag = null;
 const LEFT_PAD = 12;
 const FRAME_PX_LIMIT = 4000;
@@ -126,8 +128,8 @@ export function renderAll() {
   const p = state.project;
   content.style.width = `${contentWidth()}px`;
   renderRuler();
-  headersScroll.replaceChildren(...p.tracks.map(trackHeader));
-  lanesEl.replaceChildren(...p.tracks.map(trackLane));
+  headersScroll.replaceChildren(captionHeader(), ...p.tracks.map(trackHeader));
+  lanesEl.replaceChildren(captionLane(), ...p.tracks.map(trackLane));
   emptyHint.hidden = p.tracks.some(t => t.clips.length > 0);
   updatePlayhead();
   updateSelection();
@@ -204,6 +206,7 @@ function clipEl(clip, track) {
   const label = h('div', { class: 'clip-label' }, clip.name || media?.name || clip.kind);
   if (clip.speed !== 1) label.append(h('span', { class: 'tag' }, `${parseFloat(clip.speed.toFixed(2))}×`));
   if (clip.kind === 'title' && clip.title) label.textContent = `T  ${clip.title.text.split('\n')[0]}`;
+  if (clip.reverse) label.append(h('span', { class: 'tag' }, '⟲'));
   el.append(label);
 
   if (asset?.filmstrip && (clip.kind === 'video' || clip.kind === 'image') && w > 24) {
@@ -277,7 +280,21 @@ function updateSelection() {
   if (anyKf) renderLanesOnly();
 }
 function renderLanesOnly() {
-  lanesEl.replaceChildren(...state.project.tracks.map(trackLane));
+  lanesEl.replaceChildren(captionLane(), ...state.project.tracks.map(trackLane));
+}
+
+function captionHeader() {
+  const head = h('div', { class: 'track-head caption', title: 'Captions (edit them in the Captions tab)' }, h('span', { class: 'tname' }, 'CC'),
+    btn('', { icon: 'plus', class: 'ghost sm', title: 'Add caption at playhead (⇧C)', onClick: () => bus.emit('cmd', 'add-caption') }));
+  return head;
+}
+function captionLane() {
+  const lane = h('div', { class: 'track-lane caption', dataset: { caption: '1' } });
+  for (const cap of state.project.captions || []) {
+    const w = Math.max(3, (cap.end - cap.start) * state.zoom);
+    lane.append(h('div', { class: `cap-block ${state.selectedCaption === cap.id ? 'selected' : ''}`, dataset: { cap: cap.id }, style: { left: `${t2x(cap.start)}px`, width: `${w}px` }, title: cap.text }, h('span', { class: 'clip-name' }, cap.text || '…')));
+  }
+  return lane;
 }
 
 // ---------- geometry helpers ----------
@@ -298,6 +315,7 @@ function snapCandidates(excludeIds = new Set()) {
   if (state.inPoint != null) c.push(state.inPoint);
   if (state.outPoint != null) c.push(state.outPoint);
   for (const m of state.project.markers) c.push(m.t);
+  for (const cap of state.project.captions || []) c.push(cap.start, cap.end);
   for (const t of state.project.tracks) for (const clip of t.clips) if (!excludeIds.has(clip.id)) c.push(clip.start, clipEnd(clip));
   return c;
 }
@@ -343,6 +361,17 @@ function onPointerDown(ev) {
     drag = { mode: 'scrub' };
     viewport.setPointerCapture(ev.pointerId);
     setPlayhead(timeAt(ev.clientX));
+    return;
+  }
+  const capNode = target.closest('.cap-block');
+  if (capNode) {
+    const cap = (state.project.captions || []).find(c => c.id === capNode.dataset.cap);
+    if (!cap) return;
+    selectCaption(cap.id);
+    clearSelection();
+    capDrag = { cap, startX: ev.clientX, orig: { start: cap.start, end: cap.end }, token: null };
+    viewport.setPointerCapture(ev.pointerId);
+    drag = { mode: 'caption' };
     return;
   }
   const clipNode = target.closest('.clip');
@@ -402,6 +431,18 @@ function findClipEl(id) {
 function onPointerMove(ev) {
   if (!drag) return;
   if (drag.mode === 'scrub') { setPlayhead(Math.max(0, timeAt(ev.clientX))); return; }
+  if (drag.mode === 'caption' && capDrag) {
+    const dx = (ev.clientX - capDrag.startX) / state.zoom;
+    if (Math.abs(dx * state.zoom) < 3 && !capDrag.token) return;
+    if (!capDrag.token) capDrag.token = beginEdit('Move caption');
+    const d = capDrag.orig.end - capDrag.orig.start;
+    const sn = snap(capDrag.orig.start + dx, new Set(), [0, d]);
+    capDrag.cap.start = Math.max(0, sn.t);
+    capDrag.cap.end = capDrag.cap.start + d;
+    showSnap(sn.snapped);
+    renderLanesOnly();
+    return;
+  }
   if (drag.mode === 'move-pending') {
     if (Math.hypot(ev.clientX - drag.startX, ev.clientY - drag.startY) < 4) return;
     drag.mode = 'move';
@@ -537,6 +578,7 @@ function onPointerUp(ev) {
     return;
   }
   if (d.mode === 'trim' || d.mode === 'fade') { endEdit(d.token); return; }
+  if (d.mode === 'caption') { if (capDrag?.token) endEdit(capDrag.token); else if (capDrag) setPlayhead(capDrag.cap.start); capDrag = null; return; }
   if (d.mode === 'marquee') { marquee.hidden = true; bus.emit('selection'); return; }
 }
 
@@ -581,6 +623,9 @@ function onContextMenu(ev) {
     { label: 'Paste', shortcut: '⌘V', disabled: !state.clipboard.length, onClick: () => { setPlayhead(t); ops.paste(); } },
     { label: 'Add title here', onClick: () => ops.insertGenerated('title', { at: t, trackId: lane?.dataset.track }) },
     { label: 'Add color clip here', onClick: () => ops.insertGenerated('color', { at: t, trackId: lane?.dataset.track }) },
+    { label: 'Add annotation here', children: [{ label: 'Rectangle', onClick: () => ops.insertGenerated('shape', { at: t, trackId: lane?.dataset.track, shapeKind: 'rect' }) }, { label: 'Ellipse', onClick: () => ops.insertGenerated('shape', { at: t, trackId: lane?.dataset.track, shapeKind: 'ellipse' }) }, { label: 'Arrow', onClick: () => ops.insertGenerated('shape', { at: t, trackId: lane?.dataset.track, shapeKind: 'arrow' }) }, { label: 'Line', onClick: () => ops.insertGenerated('shape', { at: t, trackId: lane?.dataset.track, shapeKind: 'line' }) }] },
+    { label: 'Add timecode overlay here', onClick: () => ops.insertGenerated('timecode', { at: t, trackId: lane?.dataset.track }) },
+    { label: 'Add caption here', onClick: () => { setPlayhead(t); bus.emit('cmd', 'add-caption'); } },
     { label: 'Add marker here', shortcut: 'M', onClick: () => ops.addMarker(t) },
     { sep: true },
     { label: 'Add video track', onClick: () => ops.addTrack('video') },
@@ -602,11 +647,17 @@ export function clipMenu(x, y) {
     { sep: true },
     { label: 'Split at playhead', shortcut: 'S', onClick: ops.splitAtPlayhead },
     { label: 'Speed…', disabled: !items.some(i => i.clip.kind === 'video' || i.clip.kind === 'audio'), onClick: async () => { const v = await promptDialog('Speed', 'Multiplier (0.1 – 16)', String(one?.clip.speed ?? 1)); const n = parseFloat(v); if (n > 0) ops.setSpeedSelected(n); } },
+    { label: one && one.clip.reverse ? 'Play forwards' : 'Reverse', disabled: !items.some(i => i.clip.kind === 'video' || i.clip.kind === 'audio'), onClick: ops.toggleReverse },
     { label: one && one.clip.muted ? 'Unmute audio' : 'Mute audio', onClick: () => edit('Mute', () => { for (const { clip } of items) clip.muted = !clip.muted; }) },
     { label: 'Detach audio', disabled: !items.some(i => i.clip.kind === 'video' && hasAudio(i.clip, state.project)), onClick: ops.detachAudio },
     { label: 'Add transition', disabled: !visual, children: transitions },
     { label: 'Remove transitions', disabled: !visual, onClick: () => edit('Remove transitions', () => { for (const { clip } of items) { clip.transition_in = null; clip.transition_out = null; } }) },
     { label: 'Reset transform', disabled: !visual, onClick: () => edit('Reset transform', () => { for (const { clip } of items) { clip.transform = { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 }; clip.keyframes = {}; } }) },
+    { sep: true },
+    { label: 'Freeze frame here', disabled: !items.some(i => i.clip.kind === 'video'), onClick: ops.freezeFrame },
+    { label: 'Remove silence…', disabled: !items.some(i => hasAudio(i.clip, state.project)), onClick: ops.removeSilence },
+    { label: 'Layout', disabled: items.length < 2, children: [...ops.LAYOUTS.map(l => ({ label: l.name, onClick: () => ops.applyLayout(l.id) })), { label: 'Compare with labels…', onClick: ops.compareLayout }] },
+    { label: 'Sync by audio', disabled: items.length !== 2, onClick: ops.syncSelected },
     { label: 'Rename…', disabled: !one, onClick: async () => { const n = await promptDialog('Rename clip', 'Name', one.clip.name); if (n != null) edit('Rename', () => { one.clip.name = n; }); } },
     { sep: true },
     { label: 'Delete', shortcut: '⌫', onClick: () => ops.deleteSelected() },

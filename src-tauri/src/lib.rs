@@ -1,4 +1,4 @@
-//! RueyVideoEditor engine: the Rust side of the app. The UI lives in `../ui`.
+//! RueyMediaEditor engine: the Rust side of the app. The UI lives in `../ui`.
 
 pub mod commands;
 pub mod export;
@@ -45,5 +45,5 @@ pub fn run() {
             commands::transcribe,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running RueyVideoEditor");
+        .expect("error while running RueyMediaEditor");
 }

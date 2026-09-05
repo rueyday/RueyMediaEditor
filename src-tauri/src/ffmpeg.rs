@@ -1,7 +1,7 @@
 //! Finding, downloading and running FFmpeg.
 //!
 //! Lookup order: a user-chosen directory, a sidecar next to the executable
-//! (release bundles), a copy RueyVideoEditor downloaded itself, then the PATH.
+//! (release bundles), a copy RueyMediaEditor downloaded itself, then the PATH.
 
 use serde::Serialize;
 use std::io::{BufRead, BufReader, Read};
@@ -161,7 +161,7 @@ pub fn locate(app_data: &Path, custom_dir: Option<&Path>) -> Option<Tools> {
 /// `progress(name, downloaded_bytes, total_bytes)` is called while downloading.
 pub fn download(app_data: &Path, mut progress: impl FnMut(&str, u64, u64)) -> Result<Tools, String> {
     let platform = asset_platform().ok_or_else(|| {
-        "No prebuilt FFmpeg is available for this platform. Install FFmpeg yourself and point RueyVideoEditor at it in Settings.".to_string()
+        "No prebuilt FFmpeg is available for this platform. Install FFmpeg yourself and point RueyMediaEditor at it in Settings.".to_string()
     })?;
     let dir = downloaded_dir(app_data);
     std::fs::create_dir_all(&dir).map_err(|e| format!("Cannot create {}: {e}", dir.display()))?;

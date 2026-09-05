@@ -1,10 +1,11 @@
 // Inspector: properties of the selected clip or track.
 
 import { state, bus, edit, beginEdit, endEdit, primaryClip, selectedClips } from './state.js';
-import { KEYFRAMABLE, kfValue, setKeyframe, removeKeyframe, keyframeAt, clipDuration, clipEnd, isVisual, hasAudio, TRANSITIONS, EFFECTS, newEffect, prevClip, nextClip, transformAt } from './model.js';
+import { KEYFRAMABLE, kfValue, setKeyframe, removeKeyframe, keyframeAt, clipDuration, clipEnd, isVisual, hasAudio, TRANSITIONS, EFFECTS, newEffect, prevClip, nextClip, transformAt, LOOKS, SHAPES, isGenerated } from './model.js';
 import * as ops from './ops.js';
 import { h, btn, icon, propRow, numberInput, rangeInput, selectInput, fmtTimecode, fmtNum, clamp, toast } from './ui.js';
-import { dialog } from './bridge.js';
+import { dialog, isTauri } from './bridge.js';
+import { baseName } from './ui.js';
 
 let root, body, current = null, liveToken = null;
 const kfControls = new Map(); // key -> { range, num, diamond }
@@ -70,17 +71,28 @@ function clipPanel({ clip, track }) {
   if (isVisual(clip)) frag.append(effectsSection(clip));
   if (clip.kind === 'title') frag.append(titleSection(clip));
   if (clip.kind === 'color') frag.append(colorSection(clip));
+  if (clip.kind === 'shape') frag.append(shapeSection(clip));
+  if (clip.kind === 'timecode') frag.append(timecodeSection(clip));
+  if (clip.kind === 'video') frag.append(toolsSection(clip));
   return frag;
 }
 
 function kindLabel(clip) {
-  return { video: 'Video clip', audio: 'Audio clip', image: 'Image', title: 'Title', color: 'Color' }[clip.kind] || clip.kind;
+  return { video: 'Video clip', audio: 'Audio clip', image: 'Image', title: 'Title', color: 'Color', shape: 'Shape', timecode: 'Timecode overlay' }[clip.kind] || clip.kind;
+}
+
+function toolsSection(clip) {
+  return section('Tools', [h('div', { class: 'row wrap' },
+    btn('Freeze frame', { class: 'sm', title: 'Hold the frame under the playhead as a still image', onClick: ops.freezeFrame }),
+    btn('Remove silence', { class: 'sm', title: 'Cut silent parts out of this clip', onClick: ops.removeSilence }),
+  ), h('div', { class: 'hint' }, 'Right-click clips for layouts, comparison labels, and audio sync.')], { open: false });
 }
 
 function localTime(clip) { return clamp(state.playhead - clip.start, 0, clipDuration(clip)); }
 
 function setTransformValue(clip, key, v, lv) {
   if (clip.keyframes?.[key]?.length) setKeyframe(clip, key, localTime(clip), v);
+  else if (key === 'volume') clip.volume = v;
   else clip.transform[key] = v;
 }
 
@@ -176,6 +188,9 @@ function timingSection(clip, track) {
     const range = rangeInput(clip.speed, { min: 0.1, max: 4, step: 0.05, onInput: v => lv.input(() => { clip.speed = v; }), onChange: v => lv.commit(() => applySpeed(clip, track, v)) });
     const num = numberInput(clip.speed, { min: 0.1, max: 16, step: 0.05, onChange: v => edit('Speed', () => applySpeed(clip, track, v)) });
     rows.push(propRow('Speed (×)', range, num, { class: 'no-kf' }));
+    const rev = h('input', { class: 'check', type: 'checkbox', checked: !!clip.reverse });
+    rev.addEventListener('change', () => edit('Reverse', () => { clip.reverse = rev.checked; }));
+    rows.push(h('label', { class: 'row', title: 'Play backwards. The preview steps through frames; the export is smooth.' }, rev, ' Reverse'));
     rows.push(propRow('Source in / out', h('span', { class: 'hint' }, `${clip.in.toFixed(2)}s → ${clip.out.toFixed(2)}s`), null, { class: 'wide' }));
   } else {
     const num = numberInput(clipDuration(clip), { min: 0.1, step: 0.1, onChange: v => edit('Duration', () => { const nx = nextClip(track, clip); const max = nx ? nx.start - clip.start : Infinity; clip.out = clip.in + clamp(v, 0.1, max); }) });
@@ -190,15 +205,13 @@ function applySpeed(clip, track, v) {
 }
 
 function audioSection(clip) {
-  const lv = live('Volume');
-  const range = rangeInput(clip.volume * 100, { min: 0, max: 200, step: 1, onInput: v => lv.input(() => { clip.volume = v / 100; }), onChange: v => lv.commit(() => { clip.volume = v / 100; }) });
-  const num = numberInput(clip.volume * 100, { min: 0, max: 400, step: 1, onChange: v => edit('Volume', () => { clip.volume = v / 100; }) });
+  const volumeRow = transformRow(clip, 'volume', 'Volume', { min: 0, max: 200, step: 1, factor: 100, unit: '%' });
   const fadeIn = numberInput(clip.fade_in, { min: 0, step: 0.1, onChange: v => edit('Fade', () => { clip.fade_in = clamp(v, 0, clipDuration(clip)); }) });
   const fadeOut = numberInput(clip.fade_out, { min: 0, step: 0.1, onChange: v => edit('Fade', () => { clip.fade_out = clamp(v, 0, clipDuration(clip)); }) });
   const mute = h('input', { class: 'check', type: 'checkbox', checked: clip.muted });
   mute.addEventListener('change', () => edit('Mute', () => { clip.muted = mute.checked; }));
   const rows = [
-    propRow('Volume (%)', range, num, { class: 'no-kf' }),
+    volumeRow,
     propRow('Fade in (s)', h('span'), fadeIn, { class: 'no-kf' }),
     propRow('Fade out (s)', h('span'), fadeOut, { class: 'no-kf' }),
     h('div', { class: 'row' }, h('label', { class: 'row' }, mute, ' Mute'), h('span', { class: 'grow' }),
@@ -226,7 +239,11 @@ function effectsSection(clip) {
   const list = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } });
   (clip.effects || []).forEach((e, i) => list.append(effectCard(clip, e, i)));
   const add = selectInput('', [{ id: '', name: '+ Add effect…' }, ...Object.entries(EFFECTS).map(([id, d]) => ({ id, name: d.name }))], v => { if (v) edit('Add effect', () => { clip.effects.push(newEffect(v)); }); });
-  return section('Effects', [list, add], { open: true });
+  const looks = selectInput('', [{ id: '', name: '✨ Apply a look…' }, ...LOOKS.map(l => ({ id: l.id, name: l.name }))], v => {
+    const look = LOOKS.find(l => l.id === v);
+    if (look) edit(`Look: ${look.name}`, () => { for (const [type, params] of look.effects) clip.effects.push(newEffect(type, params)); });
+  });
+  return section('Effects', [list, h('div', { class: 'row' }, add, looks)], { open: true });
 }
 function effectCard(clip, e, i) {
   const def = EFFECTS[e.type];
@@ -254,7 +271,7 @@ function effectCard(clip, e, i) {
       const lv = live(def.name);
       const range = rangeInput(e.params[p.key] ?? p.def, { min: p.min, max: p.max, step: p.step, onInput: v => lv.input(() => { e.params[p.key] = v; }), onChange: v => lv.commit(() => { e.params[p.key] = v; }) });
       const num = numberInput(e.params[p.key] ?? p.def, { min: p.min, max: p.max, step: p.step, onChange: v => edit(def.name, () => { e.params[p.key] = v; }) });
-      card.append(propRow(p.name, range, num));
+      card.append(propRow(p.approx ? `${p.name} ≈` : p.name, range, num));
     }
   }
   return card;
@@ -282,8 +299,11 @@ function titleSection(clip) {
   const shadow = h('input', { class: 'check', type: 'checkbox', checked: !!t.shadow });
   shadow.addEventListener('change', () => edit('Title shadow', () => { t.shadow = shadow.checked; }));
   const lh = numberInput(t.line_height, { min: 0.6, max: 3, step: 0.05, onChange: v => edit('Line height', () => { t.line_height = v; }) });
+  const fontBtn = btn(t.font_file ? baseName(t.font_file) : 'Inter (built in)', { class: 'sm', title: 'Choose a .ttf/.otf font file', onClick: async () => { const r = await dialog.openFiles([{ name: 'Font', extensions: ['ttf', 'otf'] }], false); if (r[0]) edit('Title font', () => { t.font_file = r[0]; }); } });
+  const fontRow = h('div', { class: 'row' }, fontBtn, t.font_file ? btn('', { icon: 'x', class: 'ghost sm', title: 'Use the built-in font', onClick: () => edit('Title font', () => { t.font_file = null; }) }) : null);
   return section('Title', [
     text,
+    propRow('Font', fontRow, null, { class: 'wide' }),
     propRow('Size', sizeRange, size, { class: 'no-kf' }),
     propRow('Color', h('div', { class: 'row' }, color, weight), null, { class: 'wide' }),
     propRow('Align', align, null, { class: 'wide' }),
@@ -295,6 +315,51 @@ function titleSection(clip) {
 }
 function alphaOf(hex) { return hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1; }
 function withAlpha(hex, a) { return hex.slice(0, 7) + Math.round(clamp(a, 0, 1) * 255).toString(16).padStart(2, '0'); }
+
+function shapeSection(clip) {
+  const sh = clip.shape || (clip.shape = { kind: 'rect', stroke: '#ff3b30', stroke_width: 8, fill: null, w: 0.3, h: 0.2 });
+  const lv = live('Shape');
+  const kind = selectInput(sh.kind, SHAPES, v => edit('Shape', () => { sh.kind = v; }));
+  const stroke = h('input', { class: 'color', type: 'color', value: sh.stroke });
+  stroke.addEventListener('input', () => { sh.stroke = stroke.value; bus.emit('project-live'); });
+  stroke.addEventListener('change', () => edit('Shape color', () => { sh.stroke = stroke.value; }));
+  const width = rangeInput(sh.stroke_width, { min: 0, max: 60, step: 1, onInput: v => lv.input(() => { sh.stroke_width = v; }), onChange: v => lv.commit(() => { sh.stroke_width = v; }) });
+  const fillOn = h('input', { class: 'check', type: 'checkbox', checked: !!sh.fill });
+  const fill = h('input', { class: 'color', type: 'color', value: (sh.fill || '#ff3b30').slice(0, 7) });
+  const fillAlpha = rangeInput(sh.fill ? alphaOf(sh.fill) : 0.3, { min: 0, max: 1, step: 0.05, onChange: v => edit('Shape fill', () => { sh.fill = withAlpha(fill.value, v); }) });
+  fillOn.addEventListener('change', () => edit('Shape fill', () => { sh.fill = fillOn.checked ? withAlpha(fill.value, parseFloat(fillAlpha.value)) : null; }));
+  fill.addEventListener('change', () => edit('Shape fill', () => { sh.fill = withAlpha(fill.value, parseFloat(fillAlpha.value)); }));
+  const w = rangeInput(sh.w * 100, { min: 1, max: 100, step: 1, onInput: v => lv.input(() => { sh.w = v / 100; }), onChange: v => lv.commit(() => { sh.w = v / 100; }) });
+  const hh = rangeInput(sh.h * 100, { min: 1, max: 100, step: 1, onInput: v => lv.input(() => { sh.h = v / 100; }), onChange: v => lv.commit(() => { sh.h = v / 100; }) });
+  return section('Shape', [
+    propRow('Kind', kind, null, { class: 'wide' }),
+    propRow('Stroke', h('div', { class: 'row' }, stroke, width), null, { class: 'wide' }),
+    propRow('Fill', h('div', { class: 'row' }, fillOn, fill, fillAlpha), null, { class: 'wide' }),
+    propRow('Width (%)', w, null, { class: 'wide' }),
+    propRow('Height (%)', hh, null, { class: 'wide' }),
+    h('div', { class: 'hint' }, 'Move, resize and rotate the shape on the preview. Use a title clip for a text label.'),
+  ]);
+}
+
+function timecodeSection(clip) {
+  const tc = clip.timecode || (clip.timecode = { format: 'hms', source: 'timeline', font_size: 40, color: '#ffffff', background: '#000000a0', position: 'top-left', offset: 0, label: '' });
+  const label = h('input', { class: 'input', value: tc.label || '', placeholder: 'Optional label, e.g. t =' });
+  label.addEventListener('keydown', e => e.stopPropagation());
+  label.addEventListener('change', () => edit('Timecode label', () => { tc.label = label.value; }));
+  const color = h('input', { class: 'color', type: 'color', value: tc.color });
+  color.addEventListener('change', () => edit('Timecode color', () => { tc.color = color.value; }));
+  const bgOn = h('input', { class: 'check', type: 'checkbox', checked: !!tc.background });
+  bgOn.addEventListener('change', () => edit('Timecode background', () => { tc.background = bgOn.checked ? '#000000a0' : null; }));
+  return section('Timecode', [
+    propRow('Show', selectInput(tc.format, [{ id: 'hms', name: 'HH:MM:SS.mmm' }, { id: 'frames', name: 'Frame number' }], v => edit('Timecode', () => { tc.format = v; })), null, { class: 'wide' }),
+    propRow('Counts', selectInput(tc.source, [{ id: 'timeline', name: 'Timeline time' }, { id: 'clip', name: 'From this clip\'s start' }], v => edit('Timecode', () => { tc.source = v; })), null, { class: 'wide' }),
+    propRow('Offset (s)', h('span'), numberInput(tc.offset || 0, { step: 0.1, onChange: v => edit('Timecode', () => { tc.offset = v; }) }), { class: 'no-kf' }),
+    propRow('Position', selectInput(tc.position, ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map(id => ({ id, name: id.replace('-', ' ') })), v => edit('Timecode', () => { tc.position = v; })), null, { class: 'wide' }),
+    propRow('Size', h('span'), numberInput(tc.font_size, { min: 8, max: 300, step: 1, onChange: v => edit('Timecode', () => { tc.font_size = v; }) }), { class: 'no-kf' }),
+    propRow('Color', h('div', { class: 'row' }, color, h('label', { class: 'row' }, bgOn, ' Background')), null, { class: 'wide' }),
+    label,
+  ]);
+}
 
 function colorSection(clip) {
   const c = h('input', { class: 'color', type: 'color', value: clip.color || '#000000' });
@@ -313,7 +378,13 @@ function multiPanel(items) {
       btn('Mute', { class: 'sm', onClick: () => edit('Mute', () => { for (const { clip } of items) clip.muted = !clip.muted; }) }),
       btn('Cross dissolve', { class: 'sm', onClick: () => ops.addTransition('crossfade') }),
     ),
-    h('div', { class: 'hint' }, 'Drag to move all selected clips together. Alt-click a clip to select only it.'));
+    h('b', {}, 'Layout'),
+    h('div', { class: 'row wrap' },
+      ...ops.LAYOUTS.map(l => btn(l.name, { class: 'sm', onClick: () => ops.applyLayout(l.id) })),
+      btn('Compare with labels…', { class: 'sm', title: 'Side by side with a label above each video', onClick: ops.compareLayout }),
+      btn('Sync by audio', { class: 'sm', title: 'Align the second clip to the first using their sound', onClick: ops.syncSelected }),
+    ),
+    h('div', { class: 'hint' }, 'Layouts use the track order: the top track goes in the first cell. Clips are fitted inside their cells without cropping.'));
 }
 function trackPanel(track) {
   const name = h('input', { class: 'input', value: track.name });

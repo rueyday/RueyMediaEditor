@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions for the main RueyVideoEditor window",
+  "description": "Permissions for the main RueyMediaEditor window",
   "windows": ["main"],
   "permissions": [
     "core:default",

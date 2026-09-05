@@ -38,7 +38,7 @@ export const MEDIA_FILTERS = [
   { name: 'Images', extensions: IMAGE_EXT },
   { name: 'All files', extensions: ['*'] },
 ];
-export const PROJECT_FILTER = [{ name: 'RueyVideoEditor project', extensions: ['rve'] }];
+export const PROJECT_FILTER = [{ name: 'RueyMediaEditor project', extensions: ['rve'] }];
 
 export const dialog = {
   async openFiles(filters = MEDIA_FILTERS, multiple = true) {

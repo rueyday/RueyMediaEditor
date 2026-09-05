@@ -20,9 +20,13 @@ export const DEFAULT_SETTINGS = {
   defaultTitleDuration: 5,
   defaultTransition: 1,
   recent: [],
+  whisperBin: '',
+  whisperModel: '',
+  whisperLanguage: 'auto',
 };
 
 export const state = {
+  selectedCaption: null,
   project: newProject(),
   path: null,
   dirty: false,

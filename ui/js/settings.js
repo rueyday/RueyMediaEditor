@@ -19,12 +19,12 @@ export async function refreshFfmpeg() {
 export function openSettings(tab = 'general') {
   const tabs = h('div', { class: 'tabs' });
   const body = h('div', {});
-  const pages = { general: generalPage, ffmpeg: ffmpegPage, cache: cachePage, about: aboutPage };
+  const pages = { general: generalPage, ffmpeg: ffmpegPage, captions: captionsPage, cache: cachePage, about: aboutPage };
   const show = id => {
     for (const t of tabs.children) t.classList.toggle('active', t.dataset.id === id);
     body.replaceChildren(pages[id]());
   };
-  for (const [id, label] of [['general', 'General'], ['ffmpeg', 'FFmpeg'], ['cache', 'Cache'], ['about', 'About']]) {
+  for (const [id, label] of [['general', 'General'], ['ffmpeg', 'FFmpeg'], ['captions', 'Captions'], ['cache', 'Cache'], ['about', 'About']]) {
     tabs.append(h('div', { class: 'tab', dataset: { id }, onClick: () => show(id) }, label));
   }
   show(tab);
@@ -62,7 +62,7 @@ function ffmpegPage() {
     status.replaceChildren(
       f?.found
         ? h('div', {}, h('span', { class: 'pill ok' }, h('span', { class: 'dot' }), `FFmpeg ${f.tools.version} · ${f.tools.source}`), h('div', { class: 'hint mono', style: { marginTop: '6px' } }, f.tools.ffmpeg), h('div', { class: 'hint' }, `${f.encoders.length} encoders · hardware: ${f.encoders.filter(e => /videotoolbox|nvenc|qsv|amf|vaapi/.test(e)).join(', ') || 'none detected'}`))
-        : h('div', {}, h('span', { class: 'pill bad' }, h('span', { class: 'dot' }), 'FFmpeg not found'), h('div', { class: 'hint', style: { marginTop: '6px' } }, isTauri ? 'RueyVideoEditor needs FFmpeg for importing, thumbnails and export. Download it here (about 90 MB), install it with your package manager, or pick a folder that contains ffmpeg and ffprobe.' : 'You are running the UI in a browser. Build the desktop app to use FFmpeg.')),
+        : h('div', {}, h('span', { class: 'pill bad' }, h('span', { class: 'dot' }), 'FFmpeg not found'), h('div', { class: 'hint', style: { marginTop: '6px' } }, isTauri ? 'RueyMediaEditor needs FFmpeg for importing, thumbnails and export. Download it here (about 90 MB), install it with your package manager, or pick a folder that contains ffmpeg and ffprobe.' : 'You are running the UI in a browser. Build the desktop app to use FFmpeg.')),
     );
   };
   render();
@@ -85,6 +85,32 @@ function ffmpegPage() {
   return box;
 }
 
+function captionsPage() {
+  const s = state.settings;
+  const status = h('div', {});
+  const refresh = async () => {
+    try {
+      const w = await invoke('whisper_status', { customBin: s.whisperBin || null });
+      status.replaceChildren(w.found ? h('span', { class: 'pill ok' }, h('span', { class: 'dot' }), `whisper.cpp found: ${w.path}`) : h('span', { class: 'pill bad' }, h('span', { class: 'dot' }), 'whisper.cpp not found'));
+    } catch { status.replaceChildren(h('span', { class: 'pill warn' }, h('span', { class: 'dot' }), 'Needs the desktop app')); }
+  };
+  refresh();
+  const bin = h('input', { class: 'input', value: s.whisperBin || '', placeholder: 'Path to whisper-cli (optional if it is on your PATH)' });
+  bin.addEventListener('change', () => { s.whisperBin = bin.value.trim(); saveSettings(); refresh(); });
+  const model = h('input', { class: 'input', value: s.whisperModel || '', placeholder: 'Path to a model, e.g. ggml-base.en.bin' });
+  model.addEventListener('change', () => { s.whisperModel = model.value.trim(); saveSettings(); });
+  for (const i of [bin, model]) i.addEventListener('keydown', e => e.stopPropagation());
+  const lang = selectInput(s.whisperLanguage || 'auto', [['auto', 'Auto detect'], ['en', 'English'], ['zh', 'Chinese'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['it', 'Italian'], ['hi', 'Hindi']].map(([id, name]) => ({ id, name })), v => { s.whisperLanguage = v; saveSettings(); });
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+    h('div', {}, 'Automatic captions use ', h('b', {}, 'whisper.cpp'), ' running locally. Nothing is uploaded. Install it (macOS: ', h('code', {}, 'brew install whisper-cpp'), '; other systems: build it from github.com/ggml-org/whisper.cpp) and download a model file such as ggml-base.en.bin (fast) or ggml-small.bin (multilingual).'),
+    status,
+    h('div', { class: 'row' }, bin, btn('Choose…', { class: 'sm', onClick: async () => { const r = await dialog.openFiles([{ name: 'All files', extensions: ['*'] }], false); if (r[0]) { bin.value = r[0]; s.whisperBin = r[0]; saveSettings(); refresh(); } } })),
+    h('div', { class: 'row' }, model, btn('Choose…', { class: 'sm', onClick: async () => { const r = await dialog.openFiles([{ name: 'Whisper model', extensions: ['bin', 'gguf'] }], false); if (r[0]) { model.value = r[0]; s.whisperModel = r[0]; saveSettings(); } } })),
+    h('div', { class: 'row' }, h('span', { class: 'hint' }, 'Language'), lang),
+    h('div', { class: 'row' }, btn('Open model downloads', { icon: 'external', onClick: () => invoke('open_url', { url: 'https://huggingface.co/ggerganov/whisper.cpp/tree/main' }) }), btn('Re-check', { icon: 'refresh', onClick: refresh })),
+  );
+}
+
 function cachePage() {
   const size = h('span', {}, '…');
   const box = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
@@ -99,7 +125,7 @@ function aboutPage() {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
     h('div', {}, h('b', {}, `${APP_NAME} ${APP_VERSION}`), h('div', { class: 'hint' }, 'Free and open-source video editor. Rust + FFmpeg engine, web UI in a native window (Tauri).')),
     h('div', { class: 'row' }, btn('Source code on GitHub', { icon: 'external', onClick: () => invoke('open_url', { url: REPO_URL }) }), btn('Report a problem', { onClick: () => invoke('open_url', { url: REPO_URL + '/issues' }) })),
-    h('div', { class: 'hint' }, 'RueyVideoEditor is MIT licensed. It runs FFmpeg (LGPL/GPL) as a separate program and bundles the Inter font (OFL).'),
+    h('div', { class: 'hint' }, 'RueyMediaEditor is MIT licensed. It runs FFmpeg (LGPL/GPL) as a separate program and bundles the Inter font (OFL).'),
   );
 }
 

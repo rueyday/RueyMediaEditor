@@ -1,8 +1,8 @@
 [package]
 name = "ruey-video-editor"
 version = "0.1.0"
-description = "RueyVideoEditor - an open-source desktop video editor"
-authors = ["RueyVideoEditor contributors"]
+description = "RueyMediaEditor - an open-source desktop video editor"
+authors = ["RueyMediaEditor contributors"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.77"

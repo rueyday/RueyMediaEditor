@@ -63,7 +63,7 @@ fn exports_a_real_project() {
     std::fs::write(&bold, include_bytes!("../../ui/fonts/Inter-Bold.ttf")).unwrap();
     let fonts = Fonts { regular, bold };
 
-    let mut p = Project { version: 1, name: "it".into(), settings: Settings { width: 640, height: 360, fps: 30.0, sample_rate: 48000 }, media: HashMap::new(), tracks: vec![], markers: vec![], captions: vec![Caption { start: 0.2, end: 1.8, text: "Hello caption".into() }], caption_style: CaptionStyle::default() };
+    let mut p = Project { version: 1, name: "it".into(), settings: Settings { width: 640, height: 360, fps: 30.0, sample_rate: 48000 }, media: HashMap::new(), tracks: vec![], markers: vec![], captions: vec![Caption { start: 0.2, end: 1.8, text: "Hello caption".into() }], caption_style: CaptionStyle { position: "top".into(), ..Default::default() } };
     p.media.extend([media("red", &red, &red_info), media("blue", &blue, &blue_info)]);
     // V1: red 0-2, blue 2-5 with a 1 s wipe, sped up 1.5x
     let mut b = clip("video", Some("blue"), 2.0, 0.0, 3.0);
@@ -85,7 +85,7 @@ fn exports_a_real_project() {
     // A shape (green box rendered to a transparent PNG, as the UI would do) and a timecode overlay.
     let shape_png = dir.join("shape.png");
     let st = Command::new(&t.ffmpeg)
-        .args(["-y", "-v", "error", "-f", "lavfi", "-i", "color=black@0.0:s=640x360:d=1,format=rgba", "-vf", "drawbox=x=400:y=250:w=160:h=90:color=green@1:t=fill", "-frames:v", "1"])
+        .args(["-y", "-v", "error", "-f", "lavfi", "-i", "color=green:s=160x90:d=1,format=rgba", "-vf", "pad=640:360:400:250:color=#00000000", "-frames:v", "1"])
         .arg(&shape_png).status().unwrap();
     assert!(st.success());
     let mut shape = clip("shape", None, 0.5, 0.0, 1.0);

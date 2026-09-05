@@ -1,4 +1,4 @@
-/* RueyVideoEditor UI. Plain CSS, no build step. Edit and reload. */
+/* RueyMediaEditor UI. Plain CSS, no build step. Edit and reload. */
 
 @font-face { font-family: "Inter"; src: url("../fonts/Inter-Regular.ttf") format("truetype"); font-weight: 400; }
 @font-face { font-family: "Inter"; src: url("../fonts/Inter-SemiBold.ttf") format("truetype"); font-weight: 600; }
@@ -375,3 +375,25 @@ input[type="checkbox"].check { accent-color: var(--accent); width: 15px; height:
 .drop-hint { position: fixed; inset: 0; z-index: 300; background: rgba(79, 140, 255, 0.18); display: grid; place-items: center; font-size: 22px; font-weight: 600; pointer-events: none; }
 .drop-hint > div { padding: 18px 28px; border-radius: 12px; background: var(--panel); border: 2px dashed var(--accent); }
 .log-box { max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-all; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; user-select: text; -webkit-user-select: text; }
+
+/* ---------- captions, shapes, left panel tabs (added with the researcher features) ---------- */
+.left-tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid var(--border); }
+.left-tabs .tab { padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.left-tabs .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.left-page { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.caption-list { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.caption-row { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--panel-2); padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.caption-row.selected { border-color: var(--accent); background: var(--accent-soft); }
+.caption-row .input.num { width: 60px; }
+.caption-row textarea { font-size: 12px; resize: vertical; }
+.track-head.caption, .track-lane.caption { height: 26px; }
+.track-head.caption .tname { color: var(--muted); }
+.track-lane.caption { background-color: rgba(245, 165, 36, 0.04); }
+.cap-block { position: absolute; top: 3px; bottom: 3px; border-radius: 3px; background: #7a5a1c; border: 1px solid var(--amber); overflow: hidden; padding: 0 6px; font-size: 11px; display: flex; align-items: center; cursor: grab; }
+.cap-block.selected { outline: 2px solid #fff; outline-offset: -2px; }
+.clip.shape { background: #5a3d7a; border-color: #9b6fd1; }
+.clip.timecode { background: #3d5a5a; border-color: #6fb8b8; }
+.clip.image { background: #2f6b4f; border-color: #4fa87b; }
+.warn-text { color: var(--amber); }
+.progress.indeterminate > div { width: 30%; animation: indet 1.2s infinite linear; }
+@keyframes indet { from { margin-left: -30%; } to { margin-left: 100%; } }

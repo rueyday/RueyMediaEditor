@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RueyVideoEditor — open-source desktop video editor</title>
-  <meta name="description" content="RueyVideoEditor is a free, open-source desktop video editor. Clone it, build it, run it.">
+  <title>RueyMediaEditor — open-source desktop video editor</title>
+  <meta name="description" content="RueyMediaEditor is a free, open-source desktop video editor. Clone it, build it, run it.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="hero">
     <div class="wrap">
-      <div class="brand"><span class="mark">R</span> RueyVideoEditor</div>
+      <div class="brand"><span class="mark">R</span> RueyMediaEditor</div>
       <h1>A video editor you build yourself.</h1>
-      <p class="lede">RueyVideoEditor is a free, open-source desktop video editor: multi-track timeline, transitions, keyframes, titles, effects and fast native FFmpeg export. There is no installer to trust. You clone the code, read it if you like, compile it, and run it.</p>
+      <p class="lede">RueyMediaEditor is a free, open-source desktop video editor: multi-track timeline, transitions, keyframes, titles, effects and fast native FFmpeg export. There is no installer to trust. You clone the code, read it if you like, compile it, and run it.</p>
       <div class="cta">
         <a class="btn primary" href="#build">Build &amp; run</a>
-        <a class="btn" href="https://github.com/rueyday/RueyVideoEditor" id="repo-link">Star on GitHub ★</a>
+        <a class="btn" href="https://github.com/rueyday/RueyMediaEditor" id="repo-link">Star on GitHub ★</a>
       </div>
     </div>
   </header>
@@ -38,8 +38,8 @@ xcode-select --install
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyVideoEditor.git rve
-cd RueyVideoEditor
+git clone https://github.com/rueyday/RueyMediaEditor.git rve
+cd RueyMediaEditor
 
 <span class="c"># 3. Run (development build) …</span>
 cargo tauri dev
@@ -54,8 +54,8 @@ winget install Rustlang.Rustup
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyVideoEditor.git rve
-cd RueyVideoEditor
+git clone https://github.com/rueyday/RueyMediaEditor.git rve
+cd RueyMediaEditor
 
 <span class="c"># 3. Run (development build) …</span>
 cargo tauri dev
@@ -71,8 +71,8 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
 cargo install tauri-cli --version "^2"
 
 <span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyVideoEditor.git rve
-cd RueyVideoEditor
+git clone https://github.com/rueyday/RueyMediaEditor.git rve
+cd RueyMediaEditor
 
 <span class="c"># 3. Run (development build) …</span>
 cargo tauri dev
@@ -90,16 +90,18 @@ cargo tauri build</code></pre>
         <div class="card"><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity and crop, all keyframable with linear or eased interpolation. Move and resize directly on the preview.</p></div>
         <div class="card"><h3>Transitions</h3><p>Cross dissolve, fade to black/white, wipes, slides, circles, zoom, pixelize and more, powered by FFmpeg's xfade.</p></div>
         <div class="card"><h3>Titles &amp; colour</h3><p>Text clips with font size, weight, alignment, background box and shadow. Solid colour clips for backgrounds.</p></div>
-        <div class="card"><h3>Effects</h3><p>Colour correction, blur, sharpen, flip, black &amp; white, sepia, invert, vignette, chroma key, LUTs, film grain.</p></div>
+        <div class="card"><h3>Effects</h3><p>Colour correction with exposure and temperature, blur, sharpen, flip, black &amp; white, sepia, invert, vignette, chroma key, LUTs, film grain, one-click looks.</p></div>
+        <div class="card"><h3>Captions</h3><p>Caption lane, SRT import/export, and local automatic transcription with whisper.cpp. Burned in on export.</p></div>
+        <div class="card"><h3>Made for research videos</h3><p>Side-by-side and grid comparisons with labels, sync clips by audio, timecode and frame-number overlays, arrows and boxes, freeze frames, silence removal, conference presets that respect size limits.</p></div>
         <div class="card"><h3>Audio</h3><p>Volume, fades, mute/solo per track, speed with pitch correction, detach audio from video.</p></div>
         <div class="card"><h3>Any format in</h3><p>Anything FFmpeg reads: MP4, MOV, MKV, AVI, WebM, ProRes, images, MP3, WAV… Proxies keep 4K editing smooth.</p></div>
-        <div class="card"><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only. Hardware encoders (VideoToolbox, NVENC, Quick Sync, AMF) when available.</p></div>
+        <div class="card"><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only, or a single frame. Target a file size. Hardware encoders (VideoToolbox, NVENC, Quick Sync, AMF) when available.</p></div>
       </div>
     </section>
 
     <section>
       <h2>Why "build it yourself"?</h2>
-      <p>Downloading an unsigned binary from a stranger is a leap of faith. RueyVideoEditor doesn't ask for it. The whole editor is about ten thousand lines of readable Rust and JavaScript, with no bundler, no framework and no telemetry. Clone it, skim <code>src-tauri/src/export.rs</code> to see exactly what runs on your files, then compile it with the same toolchain everyone else uses. Want a feature? Add it and rebuild.</p>
+      <p>Downloading an unsigned binary from a stranger is a leap of faith. RueyMediaEditor doesn't ask for it. The whole editor is about ten thousand lines of readable Rust and JavaScript, with no bundler, no framework and no telemetry. Clone it, skim <code>src-tauri/src/export.rs</code> to see exactly what runs on your files, then compile it with the same toolchain everyone else uses. Want a feature? Add it and rebuild.</p>
     </section>
 
     <section>
@@ -108,7 +110,7 @@ cargo tauri build</code></pre>
         <li><code>ui/</code> — the interface: plain HTML, CSS and ES modules. Open <code>ui/index.html</code> in a browser to work on it without compiling anything.</li>
         <li><code>src-tauri/src/export.rs</code> — turns a project into one FFmpeg filter graph. Adding an effect is one match arm here and one entry in <code>ui/js/model.js</code>.</li>
         <li><code>src-tauri/src/commands.rs</code> — the API between the UI and the engine.</li>
-        <li>The <a href="https://github.com/rueyday/RueyVideoEditor#readme">README</a> explains the architecture in detail.</li>
+        <li>The <a href="https://github.com/rueyday/RueyMediaEditor#readme">README</a> explains the architecture in detail.</li>
       </ul>
     </section>
   </main>

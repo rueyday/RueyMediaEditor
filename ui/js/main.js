@@ -8,7 +8,9 @@ import { initPreview, pause } from './preview.js';
 import { initTimeline, zoomToFit } from './timeline.js';
 import { initInspector } from './inspector.js';
 import { initMedia, importDialog, importPaths, loadAssets } from './media.js';
-import { openExportDialog } from './export.js';
+import { initCaptions, addAtPlayhead as addCaption } from './captions.js';
+import * as ops from './ops.js';
+import { openExportDialog, exportFrameDialog } from './export.js';
 import { openSettings, openProjectSettings, refreshFfmpeg, applyTheme } from './settings.js';
 import { initShortcuts } from './shortcuts.js';
 import { APP_NAME, PROJECT_EXT } from './config.js';
@@ -18,7 +20,7 @@ let undoBtn, redoBtn, titleEl, ffmpegPill, autosavePath = null, closing = false;
 async function boot() {
   applyTheme();
   buildTopbar();
-  initMedia($('#media-panel'));
+  initLeftPanel();
   initPreview($('#preview-panel'));
   initInspector($('#inspector-panel'));
   initTimeline($('#timeline-panel'));
@@ -28,13 +30,17 @@ async function boot() {
   bus.on('project', updateTitle);
   bus.on('ffmpeg', updateFfmpegPill);
   bus.on('escape', () => { clearSelection(); });
+  bus.on('cmd', c => { if (c === 'in') ops.setInPoint(); else if (c === 'out') ops.setOutPoint(); else if (c === 'export-frame') exportFrameDialog(); else if (c === 'add-caption') addCaption(); });
+  bus.on('open-settings', tab => openSettings(tab));
+  bus.on('show-captions', () => showLeftTab('captions'));
+  bus.on('need-assets', id => loadAssets(id));
   onFileDrop(paths => importPaths(paths), hover => { $('#drop-hint').hidden = !hover; });
 
   await refreshFfmpeg();
   if (isTauri && !state.ffmpeg?.found) {
     modal({
       title: 'FFmpeg is needed',
-      body: h('div', {}, 'RueyVideoEditor uses FFmpeg to read media and render exports. It was not found on this computer. You can download it now (about 90 MB, one time), or install it yourself and point RueyVideoEditor at it in Settings.'),
+      body: h('div', {}, 'RueyMediaEditor uses FFmpeg to read media and render exports. It was not found on this computer. You can download it now (about 90 MB, one time), or install it yourself and point RueyMediaEditor at it in Settings.'),
       buttons: [{ label: 'Later' }, { label: 'Open FFmpeg settings', primary: true, onClick: c => { c(); openSettings('ffmpeg'); } }],
     });
   }
@@ -58,6 +64,21 @@ async function boot() {
     window.addEventListener('beforeunload', e => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
   }
   updateTitle();
+}
+
+let leftTabs;
+function initLeftPanel() {
+  const panel = $('#media-panel');
+  leftTabs = h('div', { class: 'left-tabs' }, h('div', { class: 'tab active', dataset: { tab: 'media' }, onClick: () => showLeftTab('media') }, 'Media'), h('div', { class: 'tab', dataset: { tab: 'captions' }, onClick: () => showLeftTab('captions') }, 'Captions'));
+  const media = h('div', { class: 'left-page', dataset: { page: 'media' } });
+  const captions = h('div', { class: 'left-page', dataset: { page: 'captions' }, hidden: true });
+  panel.append(leftTabs, media, captions);
+  initMedia(media);
+  initCaptions(captions);
+}
+function showLeftTab(id) {
+  for (const t of leftTabs.children) t.classList.toggle('active', t.dataset.tab === id);
+  for (const p of $('#media-panel').querySelectorAll('.left-page')) p.hidden = p.dataset.page !== id;
 }
 
 function buildTopbar() {
@@ -144,7 +165,7 @@ export async function loadProjectFile(path) {
   try {
     const text = await invoke('load_project', { path });
     const project = JSON.parse(text);
-    if (!project || !Array.isArray(project.tracks)) throw new Error('Not a RueyVideoEditor project');
+    if (!project || !Array.isArray(project.tracks)) throw new Error('Not a RueyMediaEditor project');
     pause();
     replaceProject(project, path);
     state.assets = {};
