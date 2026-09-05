@@ -3,18 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RueyMediaEditor — open-source video editor for research videos</title>
-  <meta name="description" content="RueyMediaEditor is a free, open-source desktop video editor with a Rust + FFmpeg engine. Side-by-side comparisons, captions, keyframes, fast native export. Clone it, build it, run it.">
+  <title>RueyMediaEditor — the video editor you compile yourself</title>
+  <meta name="description" content="Free, open-source desktop video editor with a Rust + FFmpeg engine, built for research videos. Side-by-side comparisons, captions, keyframes, fast native export. Clone it, build it, run it.">
   <meta property="og:title" content="RueyMediaEditor">
   <meta property="og:description" content="Free, open-source desktop video editor built for research videos. Clone it, build it, run it.">
   <meta property="og:image" content="screenshot.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232f6fe0'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-weight='800' font-size='18' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%232f6fe0'/%3E%3Cstop offset='1' stop-color='%237c5cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='Inter,system-ui,sans-serif' font-weight='800' font-size='18' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+  <div class="bg" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid"></div></div>
+
   <header class="nav">
     <div class="wrap">
       <a class="brand" href="#"><span class="mark">R</span> RueyMediaEditor</a>
@@ -22,125 +24,127 @@
         <a href="#features">Features</a>
         <a href="#research">For research</a>
         <a href="#build">Build &amp; run</a>
-        <a class="star" href="https://github.com/rueyday/RueyMediaEditor">★ Star on GitHub</a>
+        <a class="star" href="https://github.com/rueyday/RueyMediaEditor"><span class="s">★</span> Star on GitHub</a>
       </nav>
     </div>
   </header>
 
   <section class="hero">
     <div class="wrap">
-      <span class="eyebrow"><span class="dot"></span> Open source · Offline · No account · No watermark</span>
-      <h1>The video editor you <span>compile yourself.</span></h1>
-      <p class="lede">A free desktop editor with a Rust + FFmpeg engine, built for research videos: multi-track timeline, side-by-side comparisons, captions, keyframes and fast native export. No installer to trust. Clone it, build it, run it.</p>
-      <div class="cta">
-        <a class="btn dark" href="#build">Build &amp; run in 3 steps →</a>
-        <a class="btn light" href="https://github.com/rueyday/RueyMediaEditor">View the source</a>
-      </div>
-      <div class="facts">
-        <span><b>MIT</b> licensed</span>
-        <span><b>~10k lines</b> of readable Rust + JavaScript</span>
-        <span><b>0</b> uploads, accounts or telemetry</span>
-        <span><b>1</b> command to build</span>
+      <div>
+        <span class="eyebrow"><span class="pulse"></span> Open source · Offline · No account · No watermark</span>
+        <h1>The video editor<br>you <span class="rotator"><span>compile</span><span>read</span><span>own</span></span><br>yourself.</h1>
+        <p class="lede">A free desktop editor with a compiled Rust + FFmpeg engine, made for research videos. Multi-track timeline, side-by-side comparisons, captions, keyframes, and export that runs at native speed. No installer to trust: clone it, build it, run it.</p>
+        <div class="cta">
+          <a class="btn dark" href="#build"><span>Build &amp; run in 3 steps →</span></a>
+          <a class="btn light" href="https://github.com/rueyday/RueyMediaEditor">View the source</a>
+        </div>
+        <div class="facts">
+          <span><b>MIT</b> licensed</span>
+          <span><b>~10k lines</b> of readable code</span>
+          <span><b>0</b> uploads or telemetry</span>
+          <span><b>1</b> command to build</span>
+        </div>
       </div>
 
-      <div class="shot">
-        <div class="window">
-          <div class="bar"><i></i><i></i><i></i><span>ICRA supplementary v3 — RueyMediaEditor</span></div>
-          <img src="screenshot.png" alt="RueyMediaEditor with a side-by-side comparison of two experiment videos, labels, captions and a multi-track timeline" width="1440" height="900">
+      <div class="demo" aria-hidden="true">
+        <div class="bar"><i></i><i></i><i></i><span>ICRA supplementary v3</span><span class="exp">Export</span></div>
+        <div class="preview">
+          <div class="pane a"><span class="lbl">Baseline</span></div>
+          <div class="pane b"><span class="lbl">Ours</span></div>
+          <span class="cap">The arm reaches the target in 2.1 s</span>
         </div>
-        <p class="caption">Baseline vs. ours, labelled and captioned, in a couple of clicks.</p>
+        <div class="tl">
+          <div class="ruler"><span>0:00</span><span>0:05</span><span>0:10</span><span>0:15</span><span>0:20</span><span>0:25</span></div>
+          <div class="track"><div class="name">CC</div><div class="lane"><div class="clip c" style="left:10%;width:24%;animation-delay:.9s">approach</div><div class="clip c" style="left:44%;width:30%;animation-delay:1.05s">same initial conditions</div></div></div>
+          <div class="track"><div class="name">V2</div><div class="lane"><div class="clip v2" style="left:40%;width:36%;animation-delay:.6s">ours_run.mp4</div><div class="clip t" style="left:40%;width:8%;top:auto;height:0;display:none"></div></div></div>
+          <div class="track"><div class="name">V1</div><div class="lane"><div class="clip v" style="left:3%;width:37%;animation-delay:.2s">robot_arm_take3.mp4</div><div class="clip v" style="left:40%;width:45%;animation-delay:.4s">baseline_run.mp4</div></div></div>
+          <div class="track"><div class="name">A1</div><div class="lane"><div class="clip a" style="left:3%;width:82%;animation-delay:.75s">narration.m4a</div></div></div>
+          <div class="playhead"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section id="features">
+  <div class="marquee" aria-hidden="true">
+    <div class="track">
+      <span>MP4</span><span>MOV</span><span>MKV</span><span>ProRes</span><span>H.264</span><span>HEVC</span><span>AV1</span><span>VP9</span><span>GIF</span><span>WAV</span><span>MP3</span><span>SRT</span><span>LUT</span><span>4K</span><span>VideoToolbox</span><span>NVENC</span><span>whisper.cpp</span><span>xfade</span>
+      <span>MP4</span><span>MOV</span><span>MKV</span><span>ProRes</span><span>H.264</span><span>HEVC</span><span>AV1</span><span>VP9</span><span>GIF</span><span>WAV</span><span>MP3</span><span>SRT</span><span>LUT</span><span>4K</span><span>VideoToolbox</span><span>NVENC</span><span>whisper.cpp</span><span>xfade</span>
+    </div>
+  </div>
+
+  <section id="app">
     <div class="wrap">
-      <div class="kicker">Everything you expect</div>
-      <h2>A real editor, not a toy.</h2>
-      <p class="sub">The core of a non-linear editor, done properly, with the FFmpeg engine doing the heavy lifting at native speed.</p>
-      <div class="grid">
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h10"/></svg></div><h3>Multi-track timeline</h3><p>Unlimited video and audio tracks. Drag, trim, razor, ripple delete, snapping, markers, in/out points, undo history.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/></svg></div><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity, crop and volume, all keyframable. Drag, resize and rotate right on the preview.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20L20 4M4 4l16 16"/></svg></div><h3>Transitions</h3><p>Cross dissolve, fades, wipes, slides, circles and more via FFmpeg's xfade. One line to add your own.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M8 6v14M16 6v14"/></svg></div><h3>Titles &amp; captions</h3><p>Styled text clips, a caption track, SRT import/export, and local automatic transcription with whisper.cpp.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/></svg></div><h3>Colour &amp; effects</h3><p>Exposure, temperature, contrast, saturation, LUTs, blur, sharpen, chroma key, grain, vignette, one-click looks.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 10v4M7 6v12M11 9v6M15 4v16M19 8v8"/></svg></div><h3>Audio</h3><p>Volume and fades with drag handles, mute/solo, detach audio, speed with pitch correction, silence removal.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></div><h3>Any format in</h3><p>Anything FFmpeg reads: MP4, MOV, MKV, ProRes, WebM, images, audio. Proxies keep 4K smooth.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3v12M6 9l6 6 6-6"/><path d="M4 21h16"/></svg></div><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only or a single frame. Target a file size. Hardware encoders when available.</p></div>
+      <div class="reveal" style="text-align:center;max-width:720px;margin:0 auto 34px">
+        <div class="kicker">The real thing</div>
+        <h2>Dark where you work, light where you read.</h2>
+        <p class="sub" style="margin:0 auto">Three panels, one timeline, no clutter. Everything you touch is a plain HTML element you can restyle in an afternoon.</p>
+      </div>
+      <div class="shot-wrap reveal">
+        <div class="shot" id="shot">
+          <div class="window">
+            <div class="bar"><i></i><i></i><i></i><span>ICRA supplementary v3 — RueyMediaEditor</span></div>
+            <img src="screenshot.png" alt="RueyMediaEditor showing a side-by-side comparison of two experiment videos with labels, captions and a multi-track timeline" width="1440" height="900">
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <section id="research">
     <div class="wrap split">
-      <div>
+      <div class="reveal">
         <div class="kicker">Made for papers and demos</div>
-        <h2>Comparison videos in minutes.</h2>
-        <p class="sub" style="margin-bottom:22px">The parts of a research video that usually take an afternoon in a general-purpose editor are one action here.</p>
+        <h2>Baseline. Ours. Done.</h2>
+        <p class="sub" style="margin-bottom:22px">The parts of a research video that eat an afternoon in a general-purpose editor are one action here.</p>
         <ul>
-          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Layouts.</b> Side by side, three across, 2×2, picture in picture. "Compare with labels" adds Baseline · Ours · Ground truth above each cell.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Layouts in one click.</b> Side by side, three across, 2×2, picture in picture. "Compare with labels" drops Baseline · Ours · Ground truth above each cell.</span></li>
           <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Sync by audio.</b> Two recordings of the same run line up automatically.</span></li>
-          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Timecode and frame overlays,</b> arrows, boxes, freeze frames, and a timestamped frame export for figures.</span></li>
-          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Venue presets.</b> ICRA, IROS, RSS, CoRL, CVPR, NeurIPS: the export dialog warns about length and picks a bitrate that lands under the size limit.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Overlays for figures.</b> Timecode and frame numbers, arrows, boxes, freeze frames, and a pixel-exact frame export.</span></li>
+          <li><span class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></span><span><b>Venue presets.</b> ICRA, IROS, RSS, CoRL, CVPR, NeurIPS: warns about length and picks a bitrate that lands under the size limit.</span></li>
         </ul>
       </div>
-      <div class="mini" aria-hidden="true">
-        <div class="row">
-          <div class="tile a"><span>Baseline</span></div>
-          <div class="tile b"><span>Ours</span></div>
-          <div class="tile c"><span>Ground truth</span></div>
-        </div>
-        <div class="tc"><span>00:00:07.400 · frame 222</span><b>≤ 100 MB · 1080p · 30 fps</b></div>
+      <div class="compare reveal" id="compare" aria-label="Drag to compare baseline and ours">
+        <div class="side a">Baseline<small>drag the handle</small></div>
+        <div class="side b">Ours<small>same initial conditions</small></div>
+        <span class="tag l">baseline_run.mp4</span><span class="tag r">ours_run.mp4</span>
+        <span class="tc" id="tc">00:00:07.400 · frame 222</span>
+        <div class="handle"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="kicker">Everything you expect</div>
+        <h2>A real editor, not a toy.</h2>
+        <p class="sub">The core of a non-linear editor done properly, with FFmpeg doing the heavy lifting at native speed.</p>
+      </div>
+      <div class="bento reveal">
+        <div class="card span-3"><div class="art"><div class="tclip one"></div><div class="tclip two"></div><div class="tclip three"></div></div><h3>Multi-track timeline</h3><p>Unlimited video and audio tracks. Drag, trim, razor, ripple delete, snapping to everything, markers, in/out points, labelled undo history.</p></div>
+        <div class="card span-3"><div class="art"><svg class="kf" viewBox="0 0 300 76" preserveAspectRatio="none"><path d="M10 60 C 60 60, 80 16, 130 16 S 200 60, 250 60 S 290 20, 295 20"/><circle cx="10" cy="60" r="4"/><circle cx="130" cy="16" r="4"/><circle cx="250" cy="60" r="4"/></svg></div><h3>Transform &amp; keyframes</h3><p>Position, scale, rotation, opacity, crop and volume, all keyframable with easing. Drag, resize and rotate right on the preview.</p></div>
+        <div class="card span-2"><div class="art"><div class="wipe"></div></div><h3>Transitions</h3><p>Cross dissolve, fades, wipes, slides, circles via FFmpeg's xfade. One line to add another.</p></div>
+        <div class="card span-2"><div class="art"><div class="cc">Captions burn in on export</div></div><h3>Titles &amp; captions</h3><p>Styled text clips, a caption lane, SRT in/out, and local transcription with whisper.cpp.</p></div>
+        <div class="card span-2"><div class="art"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><h3>Audio</h3><p>Volume and fade handles, mute/solo, detach audio, pitch-corrected speed, silence removal.</p></div>
+        <div class="card span-2"><div class="art"><div class="grid4"><i></i><i></i><i></i><i></i></div></div><h3>Colour &amp; effects</h3><p>Exposure, temperature, LUTs, blur, sharpen, chroma key, grain, vignette, one-click looks.</p></div>
+        <div class="card span-2"><div class="art"><div class="fmt"><span>mp4</span><span>mov</span><span>mkv</span><span>prores</span><span>webm</span><span>png</span><span>wav</span><span>avi</span><span>heic</span></div></div><h3>Any format in</h3><p>Anything FFmpeg reads. Proxies keep 4K editing smooth on a laptop.</p></div>
+        <div class="card span-2"><div class="art"><span class="pct">4.2× realtime</span><div class="prog"></div></div><h3>Fast export</h3><p>H.264, HEVC, VP9, AV1, ProRes, GIF, audio-only, single frames. Hardware encoders when available.</p></div>
       </div>
     </div>
   </section>
 
   <section id="build">
     <div class="wrap">
-      <div class="kicker">Build &amp; run</div>
-      <h2>Three steps. No download page.</h2>
-      <p class="sub">Requires <a href="https://rustup.rs" style="color:var(--accent);font-weight:600">Rust</a> and the <a href="https://tauri.app/start/prerequisites/" style="color:var(--accent);font-weight:600">Tauri prerequisites</a> for your platform. FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
-      <div class="build-box">
-        <div class="tabs" role="tablist">
-          <button class="tab active" data-os="mac">macOS</button>
-          <button class="tab" data-os="win">Windows</button>
-          <button class="tab" data-os="linux">Linux</button>
-        </div>
-        <pre data-os="mac"><code><span class="c"># 1. Toolchain</span>
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-xcode-select --install
-cargo install tauri-cli --version "^2"
-
-<span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git
-cd RueyMediaEditor
-
-<span class="c"># 3. Run (or `cargo tauri build` for an .app in src-tauri/target/release/bundle/)</span>
-cargo tauri dev</code></pre>
-        <pre data-os="win" hidden><code><span class="c"># 1. Toolchain (PowerShell). Also install "Desktop development with C++"</span>
-<span class="c">#    from Visual Studio Build Tools, and the WebView2 runtime if missing.</span>
-winget install Rustlang.Rustup
-cargo install tauri-cli --version "^2"
-
-<span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git
-cd RueyMediaEditor
-
-<span class="c"># 3. Run (or `cargo tauri build` for an installer in src-tauri\target\release\bundle\)</span>
-cargo tauri dev</code></pre>
-        <pre data-os="linux" hidden><code><span class="c"># 1. Toolchain + libraries (Debian / Ubuntu shown)</span>
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
-  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev ffmpeg
-cargo install tauri-cli --version "^2"
-
-<span class="c"># 2. Clone</span>
-git clone https://github.com/rueyday/RueyMediaEditor.git
-cd RueyMediaEditor
-
-<span class="c"># 3. Run (or `cargo tauri build` for an AppImage / .deb)</span>
-cargo tauri dev</code></pre>
-        <div class="copy"><span>First build compiles the dependencies (a few minutes). After that: edit, rebuild in seconds.</span><button id="copy-btn">Copy commands</button></div>
+      <div class="reveal">
+        <div class="kicker">Build &amp; run</div>
+        <h2>Three steps. No download page.</h2>
+        <p class="sub">Requires <a href="https://rustup.rs">Rust</a> and the <a href="https://tauri.app/start/prerequisites/">Tauri prerequisites</a> for your platform. FFmpeg is found on your PATH or downloaded by the app on first launch.</p>
+      </div>
+      <div class="terminal reveal">
+        <div class="bar"><i></i><i></i><i></i><div class="tabs" role="tablist"><button class="tab active" data-os="mac">macOS</button><button class="tab" data-os="win">Windows</button><button class="tab" data-os="linux">Linux</button></div></div>
+        <pre id="term"></pre>
+        <div class="foot"><span>First build compiles the dependencies (a few minutes). After that: edit, rebuild in seconds.</span><button id="copy-btn">Copy commands</button></div>
       </div>
       <p class="reqs">Want to change something? The interface is plain HTML, CSS and JavaScript in <code class="inl">ui/</code>. The engine is Rust in <code class="inl">src-tauri/</code>; adding an effect is one match arm. The <a href="https://github.com/rueyday/RueyMediaEditor#readme">README</a> walks through the architecture.</p>
     </div>
@@ -148,12 +152,14 @@ cargo tauri dev</code></pre>
 
   <section>
     <div class="wrap">
-      <div class="kicker">Why build it yourself</div>
-      <h2>Trust the code, not a binary.</h2>
-      <div class="why" style="margin-top:28px">
-        <div class="card"><h3>Read it</h3><p>About ten thousand lines, no bundler, no framework. <code class="inl">export.rs</code> shows exactly what runs on your footage.</p></div>
-        <div class="card"><h3>Own it</h3><p>Your files never leave your machine. There is nothing to sign in to and nothing that phones home.</p></div>
-        <div class="card"><h3>Change it</h3><p>Same toolchain as everyone else. Add the feature you need, rebuild, and send a pull request if you like.</p></div>
+      <div class="reveal">
+        <div class="kicker">Why build it yourself</div>
+        <h2>Trust the code, not a binary.</h2>
+      </div>
+      <div class="trust reveal">
+        <div class="card"><div class="num">01</div><h3>Read it</h3><p>About ten thousand lines, no bundler, no framework. <code class="inl">export.rs</code> shows exactly what runs on your footage.</p></div>
+        <div class="card"><div class="num">02</div><h3>Own it</h3><p>Your files never leave your machine. Nothing to sign in to, nothing that phones home, nothing that expires.</p></div>
+        <div class="card"><div class="num">03</div><h3>Change it</h3><p>Same toolchain as everyone else. Add the feature you need, rebuild, and send a pull request if you like.</p></div>
       </div>
     </div>
   </section>
@@ -166,18 +172,66 @@ cargo tauri dev</code></pre>
   </footer>
 
   <script>
-    const tabs = document.querySelectorAll('.tab');
-    const show = os => {
-      tabs.forEach(t => t.classList.toggle('active', t.dataset.os === os));
-      document.querySelectorAll('pre[data-os]').forEach(p => { p.hidden = p.dataset.os !== os; });
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Scroll reveals
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // Screenshot tilt
+    const shot = document.getElementById('shot');
+    const wrap = shot.parentElement;
+    if (!reduced) {
+      wrap.addEventListener('mousemove', e => { const r = wrap.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5; shot.style.transform = `rotateY(${x * 6}deg) rotateX(${-y * 5}deg)`; });
+      wrap.addEventListener('mouseleave', () => { shot.style.transform = ''; });
+    }
+
+    // Spotlight cards
+    document.querySelectorAll('.card').forEach(c => c.addEventListener('mousemove', e => { const r = c.getBoundingClientRect(); c.style.setProperty('--mx', `${e.clientX - r.left}px`); c.style.setProperty('--my', `${e.clientY - r.top}px`); }));
+
+    // Compare slider: auto-sways until touched
+    const cmp = document.getElementById('compare');
+    const tc = document.getElementById('tc');
+    let touched = false, t0 = performance.now();
+    const setPos = p => { p = Math.max(2, Math.min(98, p)); cmp.style.setProperty('--pos', `${p}%`); const s = 5 + p / 100 * 8; tc.textContent = `00:00:${s.toFixed(3).padStart(6, '0')} · frame ${Math.round(s * 30)}`; };
+    const sway = () => { if (!touched && !reduced) { setPos(50 + 28 * Math.sin((performance.now() - t0) / 1600)); requestAnimationFrame(sway); } };
+    sway();
+    const drag = e => { const r = cmp.getBoundingClientRect(); setPos((e.clientX - r.left) / r.width * 100); };
+    cmp.addEventListener('pointerdown', e => { touched = true; cmp.setPointerCapture(e.pointerId); drag(e); cmp.addEventListener('pointermove', drag); });
+    cmp.addEventListener('pointerup', () => cmp.removeEventListener('pointermove', drag));
+
+    // Terminal typewriter
+    const CMDS = {
+      mac: [['# 1. Toolchain'], ['curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'], ['xcode-select --install'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  src-tauri/target/release/bundle/)'], ['cargo tauri dev']],
+      win: [['# 1. Toolchain (PowerShell). Also install "Desktop development with C++"'], ['#    from Visual Studio Build Tools, and the WebView2 runtime if missing.'], ['winget install Rustlang.Rustup'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  src-tauri\\target\\release\\bundle\\)'], ['cargo tauri dev']],
+      linux: [['# 1. Toolchain + libraries (Debian / Ubuntu shown)'], ['curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh'], ['sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \\'], ['  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev ffmpeg'], ['cargo install tauri-cli --version "^2"'], [''], ['# 2. Clone'], ['git clone https://github.com/rueyday/RueyMediaEditor.git'], ['cd RueyMediaEditor'], [''], ['# 3. Run  (or: cargo tauri build  →  AppImage / .deb)'], ['cargo tauri dev']],
     };
-    tabs.forEach(t => t.addEventListener('click', () => show(t.dataset.os)));
-    const ua = navigator.userAgent;
-    show(/Windows/.test(ua) ? 'win' : /Linux/.test(ua) && !/Android/.test(ua) ? 'linux' : 'mac');
+    const term = document.getElementById('term');
+    let os = /Windows/.test(navigator.userAgent) ? 'win' : /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent) ? 'linux' : 'mac';
+    let typing = 0;
+    const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const lineHtml = l => l.startsWith('#') ? `<span class="c">${esc(l)}</span>` : l.startsWith('  ') || l === '' ? esc(l) : `<span class="p">$</span> ${esc(l)}`;
+    async function render(instant) {
+      const id = ++typing;
+      const lines = CMDS[os].map(x => x[0]);
+      if (instant || reduced) { term.innerHTML = lines.map(lineHtml).join('\n') + '\n<span class="p">$</span> <span class="cursor"></span>'; return; }
+      let out = '';
+      for (const l of lines) {
+        if (l.startsWith('#') || l === '') { out += lineHtml(l) + '\n'; term.innerHTML = out + '<span class="cursor"></span>'; await new Promise(r => setTimeout(r, 60)); continue; }
+        let cur = '';
+        for (const ch of l) { if (id !== typing) return; cur += ch; term.innerHTML = out + lineHtml(cur) + '<span class="cursor"></span>'; await new Promise(r => setTimeout(r, 12)); }
+        out += lineHtml(l) + '\n';
+      }
+      term.innerHTML = out + '<span class="p">$</span> <span class="cursor"></span>';
+    }
+    const tabs = document.querySelectorAll('.tab');
+    const pick = (o, instant) => { os = o; tabs.forEach(t => t.classList.toggle('active', t.dataset.os === o)); render(instant); };
+    tabs.forEach(t => t.addEventListener('click', () => pick(t.dataset.os, true)));
+    const termIo = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { termIo.disconnect(); pick(os, false); } }, { threshold: 0.3 });
+    termIo.observe(term);
     document.getElementById('copy-btn').addEventListener('click', e => {
-      const pre = document.querySelector('pre[data-os]:not([hidden])');
-      const text = pre.innerText.split('\n').filter(l => !l.trim().startsWith('#') && l.trim()).join('\n');
-      navigator.clipboard?.writeText(text).then(() => { e.target.textContent = 'Copied'; setTimeout(() => { e.target.textContent = 'Copy commands'; }, 1500); });
+      const text = CMDS[os].map(x => x[0]).filter(l => l && !l.startsWith('#')).join('\n');
+      navigator.clipboard?.writeText(text).then(() => { e.target.textContent = 'Copied ✓'; setTimeout(() => { e.target.textContent = 'Copy commands'; }, 1500); });
     });
   </script>
 </body>
